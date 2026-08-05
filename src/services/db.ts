@@ -12,12 +12,8 @@ function createPrismaClient(): PrismaClient {
       parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
       const finalUrl = parsedUrl.toString();
       
-      // @ts-ignore
-      return new PrismaClient({
-        datasources: {
-          db: { url: finalUrl }
-        }
-      });
+      const opts: any = { datasourceUrl: finalUrl };
+      return new PrismaClient(opts);
     } catch(e) {
       // Ignore URL parsing errors
     }
