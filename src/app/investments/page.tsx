@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, Building2 } from "lucide-react";
-import { getBankBranding, getBankLogoUrl } from "@/lib/utils";
+import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
 
 const fmt = (v: number | undefined | null) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
