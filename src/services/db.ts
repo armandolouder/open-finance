@@ -1,28 +1,23 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 function createPrismaClient(): PrismaClient {
-  let url = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  const url = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
   
   if (url) {
-    try {
-      const parsedUrl = new URL(url);
-      parsedUrl.searchParams.set('sslmode', 'no-verify');
-      parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
-      const finalUrl = parsedUrl.toString();
-      
-      // Prisma 7 strict constructor validation rejects `datasources` and `datasourceUrl`.
-      // The only way to override the URL dynamically is to mutate process.env.
-      process.env.POSTGRES_URL_NON_POOLING = finalUrl;
-      process.env.POSTGRES_PRISMA_URL = finalUrl;
-      process.env.DATABASE_URL = finalUrl;
-      process.env.POSTGRES_URL = finalUrl;
-    } catch(e) {
-      // Ignore URL parsing errors
-    }
+    const adapter = new PrismaPg({
+      connectionString: url,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+
+    return new PrismaClient({ adapter });
   }
 
+  // Se a URL não existir, tenta criar o client (pode falhar no v7 sem adapter, mas é um fallback extremo)
   return new PrismaClient();
 }
 
