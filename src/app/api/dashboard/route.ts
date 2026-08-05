@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     for (const account of dbAccounts) {
       const accSettings = accountSettings[account.externalId] || {};
       const customConfig = cardSettings[account.externalId] || {};
-      const customName = accSettings.customName || customConfig.customName || account.name;
+      const customName = accSettings.customName || (customConfig as any).customName || account.name;
       
       let type = accSettings.type || accountTypes[account.externalId];
       if (!type) {
@@ -163,7 +163,7 @@ export async function GET(request: Request) {
 
           if (tx.direction === 'CREDIT') {
             totalIncome += tx.amount;
-            if (account.type === 'PF' && (desc.includes('pro-labore') || desc.includes('pro labore'))) {
+            if (type === 'PF' && (desc.includes('pro-labore') || desc.includes('pro labore'))) {
               proLabore += tx.amount;
             }
           } else {
