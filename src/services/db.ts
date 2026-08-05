@@ -4,11 +4,19 @@ import { PrismaPg } from '@prisma/adapter-pg';
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 function createPrismaClient(): PrismaClient {
-  const url = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  const url = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL || process.env.POSTGRES_URL;
   
   if (url) {
+    let finalUrl = url;
+    try {
+      const parsedUrl = new URL(url);
+      parsedUrl.searchParams.set('sslmode', 'no-verify');
+      parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
+      finalUrl = parsedUrl.toString();
+    } catch(e) {}
+
     const adapter = new PrismaPg({
-      connectionString: url,
+      connectionString: finalUrl,
       ssl: {
         rejectUnauthorized: false
       }
