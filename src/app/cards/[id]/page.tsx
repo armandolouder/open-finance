@@ -54,7 +54,7 @@ interface CardData {
   }[];
 }
 
-export default function CardDetailsPage() {
+function CardDetailsPageContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -340,5 +340,14 @@ export default function CardDetailsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+import { Suspense } from "react";
+export default function CardDetailsPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Carregando detalhes do cartão...</div>}>
+      <CardDetailsPageContent />
+    </Suspense>
   );
 }

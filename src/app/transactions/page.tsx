@@ -43,7 +43,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Salary": "bg-emerald-500/10 text-emerald-400",
 };
 
-export default function TransactionsPage() {
+function TransactionsPageContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get("month") || monthKey(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -251,5 +251,14 @@ export default function TransactionsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+import { Suspense } from "react";
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Carregando transações...</div>}>
+      <TransactionsPageContent />
+    </Suspense>
   );
 }

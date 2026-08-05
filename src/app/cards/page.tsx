@@ -61,7 +61,7 @@ interface CardData {
   bills: CardBill[];
 }
 
-export default function CardsPage() {
+function CardsPageContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get("month") || monthKey(new Date());
   const [cards, setCards] = useState<CardData[]>([]);
@@ -352,5 +352,14 @@ export default function CardsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+import { Suspense } from "react";
+export default function CardsPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Carregando cartões...</div>}>
+      <CardsPageContent />
+    </Suspense>
   );
 }
