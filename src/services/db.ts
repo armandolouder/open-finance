@@ -10,20 +10,20 @@ function createPrismaClient(): PrismaClient {
       const parsedUrl = new URL(url);
       parsedUrl.searchParams.set('sslmode', 'no-verify');
       parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
-      url = parsedUrl.toString();
+      const finalUrl = parsedUrl.toString();
+      
+      // Prisma 7 strict constructor validation rejects `datasources` and `datasourceUrl`.
+      // The only way to override the URL dynamically is to mutate process.env.
+      process.env.POSTGRES_URL_NON_POOLING = finalUrl;
+      process.env.POSTGRES_PRISMA_URL = finalUrl;
+      process.env.DATABASE_URL = finalUrl;
+      process.env.POSTGRES_URL = finalUrl;
     } catch(e) {
       // Ignore URL parsing errors
     }
-
-    const opts: any = {
-      datasources: {
-        db: { url }
-      }
-    };
-    return new PrismaClient(opts);
   }
 
-  return new PrismaClient(); // fallback
+  return new PrismaClient();
 }
 
 // Força a recriação do client (útil após alterações de schema no dev)
