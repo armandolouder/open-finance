@@ -35,22 +35,37 @@ export async function GET() {
 
     // 2. Fetch manual investments from AccountSettings
     const accounts = await prisma.account.findMany({ include: { connection: true } });
-    const settings = await prisma.setting.findMany({ where: { key: { startsWith: 'account_settings_' } } });
+    const settings = await prisma.setting.findMany({ 
+      where: { 
+        OR: [
+          { key: { startsWith: 'account_settings_' } },
+          { key: { startsWith: 'account_label_' } }
+        ]
+      } 
+    });
+    
     const accountSettings: Record<string, any> = {};
+    const accountLabels: Record<string, any> = {};
     
     for (const s of settings) {
       try {
-        accountSettings[s.key.replace('account_settings_', '')] = JSON.parse(s.value);
+        if (s.key.startsWith('account_settings_')) {
+          accountSettings[s.key.replace('account_settings_', '')] = JSON.parse(s.value);
+        } else if (s.key.startsWith('account_label_')) {
+          accountLabels[s.key.replace('account_label_', '')] = JSON.parse(s.value);
+        }
       } catch {}
     }
 
     for (const account of accounts) {
       const invValue = accountSettings[account.externalId]?.investments;
       if (invValue && invValue > 0) {
+        const customName = accountLabels[account.externalId]?.customName || account.name;
+        
         allInvestments.push({
           id: `manual_${account.id}`,
-          name: `Saldo Investido`,
-          type: 'OTHER',
+          name: customName,
+          type: 'MANUAL',
           value: invValue,
           balance: invValue,
           institutionName: account.connection.institutionName || 'Desconhecida',

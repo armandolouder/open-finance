@@ -35,6 +35,7 @@ const TYPE_LABEL: Record<string, string> = {
   EQUITY: "Ações",
   ETF: "ETF",
   FUND: "Fundo",
+  MANUAL: "Saldos Manuais",
   OTHER: "Outros",
 };
 
@@ -157,7 +158,11 @@ export default function InvestmentsPage() {
               <span className="text-xs text-muted-foreground ml-auto font-semibold">{fmt(bankTotal)}</span>
             </div>
 
-            {Object.entries(byType).map(([type, list]) => (
+            {Object.entries(byType).sort(([typeA], [typeB]) => {
+              if (typeA === 'MANUAL') return -1;
+              if (typeB === 'MANUAL') return 1;
+              return typeA.localeCompare(typeB);
+            }).map(([type, list]) => (
               <div key={type} className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
                 <div className="px-5 py-2 border-b border-border bg-muted/30">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
