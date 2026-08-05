@@ -8,16 +8,11 @@ function createPrismaClient(): PrismaClient {
   if (url) {
     try {
       const parsedUrl = new URL(url);
-      // Prisma Rust Engine flags for self-signed certificates
       parsedUrl.searchParams.set('sslmode', 'no-verify');
       parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
-      url = parsedUrl.toString();
       
-      return new PrismaClient({
-        datasources: {
-          db: { url }
-        }
-      });
+      // Override the env var so Prisma Rust Engine picks it up automatically
+      process.env.POSTGRES_PRISMA_URL = parsedUrl.toString();
     } catch(e) {
       // Ignore URL parsing errors
     }
