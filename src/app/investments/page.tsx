@@ -133,7 +133,13 @@ export default function InvestmentsPage() {
         </div>
       )}
 
-      {!loading && !error && Object.entries(byBank).map(([bankKey, { label, items }]) => {
+      {!loading && !error && Object.entries(byBank)
+        .sort((a, b) => {
+          const totalA = a[1].items.reduce((s, i) => s + (i.value ?? i.balance ?? i.amount ?? 0), 0);
+          const totalB = b[1].items.reduce((s, i) => s + (i.value ?? i.balance ?? i.amount ?? 0), 0);
+          return totalB - totalA; // Maior valor primeiro
+        })
+        .map(([bankKey, { label, items }]) => {
         const sampleInv = items[0];
         const logoUrl = getLogoForInvestment(sampleInv);
         const branding = getBankBranding(label);
@@ -170,6 +176,8 @@ export default function InvestmentsPage() {
             {Object.entries(byType).sort(([typeA], [typeB]) => {
               if (typeA === 'MANUAL') return -1;
               if (typeB === 'MANUAL') return 1;
+              if (typeA === 'FIXED_INCOME') return 1;
+              if (typeB === 'FIXED_INCOME') return -1;
               return typeA.localeCompare(typeB);
             }).map(([type, list]) => (
               <div key={type} className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
