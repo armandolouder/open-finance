@@ -17,13 +17,15 @@ export async function GET(request: NextRequest) {
         OR: [
           { key: { startsWith: 'card_settings_' } },
           { key: { startsWith: 'item_name_' } },
-          { key: { startsWith: 'account_label_' } }
+          { key: { startsWith: 'account_label_' } },
+          { key: 'account_order' }
         ]
       }
     });
     const cardSettings: Record<string, { dueDay?: number, closingDay?: number, waiverTarget?: number, feeAmount?: number, customName?: string }> = {};
     const customItemNames: Record<string, string> = {};
     const accountLabels: Record<string, string> = {};
+    let accountOrder: string[] = [];
 
     for (const s of settings) {
       if (s.key.startsWith('card_settings_')) {
@@ -38,6 +40,10 @@ export async function GET(request: NextRequest) {
           if (val.customName) {
             accountLabels[s.key.replace('account_label_', '')] = val.customName;
           }
+        } catch {}
+      } else if (s.key === 'account_order') {
+        try {
+          accountOrder = JSON.parse(s.value);
         } catch {}
       }
     }
@@ -217,6 +223,16 @@ export async function GET(request: NextRequest) {
         feeAmount: customConfig.feeAmount ?? null,
         bills,
         settings: customConfig,
+      });
+    }
+
+    if (accountOrder.length > 0) {
+      cards.sort((a, b) => {
+        let indexA = accountOrder.indexOf(a.id);
+        let indexB = accountOrder.indexOf(b.id);
+        if (indexA === -1) indexA = 9999;
+        if (indexB === -1) indexB = 9999;
+        return indexA - indexB;
       });
     }
 

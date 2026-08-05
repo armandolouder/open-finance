@@ -6,11 +6,22 @@ import { prisma } from '@/services/db';
 export async function GET() {
   try {
     const settings = await prisma.setting.findMany({
-      where: { key: { startsWith: 'item_name_' } }
+      where: { 
+        OR: [
+          { key: { startsWith: 'item_name_' } },
+          { key: 'account_order' }
+        ]
+      }
     });
     const customItemNames: Record<string, string> = {};
+    let accountOrder: string[] = [];
+    
     for (const s of settings) {
-      customItemNames[s.key.replace('item_name_', '')] = s.value;
+      if (s.key === 'account_order') {
+        try { accountOrder = JSON.parse(s.value); } catch {}
+      } else {
+        customItemNames[s.key.replace('item_name_', '')] = s.value;
+      }
     }
 
     const dbAccounts = await prisma.account.findMany({
@@ -70,6 +81,16 @@ export async function GET() {
           balance: account.balance ?? 0,
           availableCreditLimit: creditData.availableLimit ?? 0,
         } : null,
+      });
+    }
+
+    if (accountOrder.length > 0) {
+      allAccounts.sort((a, b) => {
+        let indexA = accountOrder.indexOf(a.id);
+        let indexB = accountOrder.indexOf(b.id);
+        if (indexA === -1) indexA = 9999;
+        if (indexB === -1) indexB = 9999;
+        return indexA - indexB;
       });
     }
 

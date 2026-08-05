@@ -20,8 +20,7 @@ const COLORS = [
 ];
 
 export function AccountSettingsModal({ account, onClose, onSaved }: AccountSettingsModalProps) {
-  const [customName, setCustomName] = useState(account.name || "");
-  const [type, setType] = useState(account.accountType || "PF");
+
   const [investments, setInvestments] = useState((account.investments || 0).toString());
   const [customColor, setCustomColor] = useState(account.customColor || "");
   const [saving, setSaving] = useState(false);
@@ -39,8 +38,6 @@ export function AccountSettingsModal({ account, onClose, onSaved }: AccountSetti
         body: JSON.stringify({ 
           accountId: account.id, 
           settings: { 
-            customName: customName.trim(), 
-            type, 
             investments: finalInvestments,
             customColor: customColor || undefined 
           } 
@@ -65,36 +62,7 @@ export function AccountSettingsModal({ account, onClose, onSaved }: AccountSetti
         </div>
 
         <div className="p-6 flex flex-col gap-5">
-          {/* NOME */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Nome da Conta</label>
-            <input 
-              type="text" 
-              value={customName}
-              onChange={e => setCustomName(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
-              placeholder="Ex: Nubank, Reserva de Emergência..."
-            />
-          </div>
 
-          {/* TIPO */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tipo</label>
-            <div className="flex gap-2">
-              <button 
-                className={cn("flex-1 py-2 text-xs font-bold tracking-wider rounded-lg border uppercase transition-colors", type === 'PF' ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-500" : "bg-background border-border text-muted-foreground hover:bg-muted")}
-                onClick={() => setType('PF')}
-              >
-                Pessoal
-              </button>
-              <button 
-                className={cn("flex-1 py-2 text-xs font-bold tracking-wider rounded-lg border uppercase transition-colors", type === 'PJ' ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-500" : "bg-background border-border text-muted-foreground hover:bg-muted")}
-                onClick={() => setType('PJ')}
-              >
-                Empresa
-              </button>
-            </div>
-          </div>
 
           {/* INVESTIMENTOS */}
           <div className="space-y-2">

@@ -15,7 +15,8 @@ export async function GET(request: Request) {
           { key: { startsWith: 'account_label_' } },
           { key: { startsWith: 'item_name_' } },
           { key: { startsWith: 'card_settings_' } },
-          { key: { startsWith: 'account_settings_' } }
+          { key: { startsWith: 'account_settings_' } },
+          { key: 'account_order' }
         ]
       }
     });
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
     const customItemNames: Record<string, string> = {};
     const cardSettings: Record<string, { dueDay?: number, closingDay?: number }> = {};
     const accountSettings: Record<string, { investments?: number, type?: string, customName?: string, customColor?: string }> = {};
+    let accountOrder: string[] = [];
     
     for (const s of settings) {
       if (s.key.startsWith('account_label_')) {
@@ -48,6 +50,10 @@ export async function GET(request: Request) {
       } else if (s.key.startsWith('account_settings_')) {
         try {
           accountSettings[s.key.replace('account_settings_', '')] = JSON.parse(s.value);
+        } catch {}
+      } else if (s.key === 'account_order') {
+        try {
+          accountOrder = JSON.parse(s.value);
         } catch {}
       }
     }
@@ -206,6 +212,16 @@ export async function GET(request: Request) {
           });
         }
       }
+    }
+
+    if (accountOrder.length > 0) {
+      accountsData.sort((a, b) => {
+        let indexA = accountOrder.indexOf(a.id);
+        let indexB = accountOrder.indexOf(b.id);
+        if (indexA === -1) indexA = 9999;
+        if (indexB === -1) indexB = 9999;
+        return indexA - indexB;
+      });
     }
 
     // Sort transactions by date descending and take top 15

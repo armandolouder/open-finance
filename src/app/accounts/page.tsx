@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Landmark, Pencil, Check, X, User, Building2, Trash2 } from "lucide-react";
+import { Landmark, Pencil, Check, X, User, Building2, Trash2, GripVertical } from "lucide-react";
 import { cn, getBankLogo, getBankBranding } from "@/lib/utils";
 import { PluggyConnectButton } from "@/components/PluggyConnectButton";
 
@@ -159,6 +159,56 @@ export default function AccountsPage() {
   const [error, setError] = useState<string | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
+  const dragItem = useRef<string | null>(null);
+  const dragOverItem = useRef<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    dragItem.current = id;
+    e.dataTransfer.effectAllowed = "move";
+    // opacity effect
+    const target = e.target as HTMLElement;
+    setTimeout(() => {
+      target.classList.add("opacity-50");
+    }, 0);
+  };
+
+  const handleDragEnter = (e: React.DragEvent, id: string) => {
+    dragOverItem.current = id;
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    target.classList.remove("opacity-50");
+
+    if (!dragItem.current || !dragOverItem.current) return;
+    if (dragItem.current === dragOverItem.current) return;
+
+    setAccounts((prev) => {
+      const newAccounts = [...prev];
+      const draggedIndex = newAccounts.findIndex((a) => a.id === dragItem.current);
+      const overIndex = newAccounts.findIndex((a) => a.id === dragOverItem.current);
+      
+      if (draggedIndex === -1 || overIndex === -1) return prev;
+      if (newAccounts[draggedIndex].type !== newAccounts[overIndex].type) return prev;
+
+      const draggedAccount = newAccounts[draggedIndex];
+      newAccounts.splice(draggedIndex, 1);
+      newAccounts.splice(overIndex, 0, draggedAccount);
+
+      // Salva a nova ordem global em background
+      fetch("/api/account-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: newAccounts.map(a => a.id) })
+      }).catch(console.error);
+
+      return newAccounts;
+    });
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
   useEffect(() => {
     Promise.all([
       fetch("/api/accounts").then((r) => r.json()),
@@ -292,9 +342,17 @@ export default function AccountsPage() {
               return (
                 <div
                   key={account.id}
-                  className="group flex items-center justify-between gap-4 rounded-2xl bg-card border border-border p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, account.id)}
+                  onDragEnter={(e) => handleDragEnter(e, account.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="group flex items-center justify-between gap-4 rounded-2xl bg-card border border-border p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-grab active:cursor-grabbing"
                 >
                   <div className="flex items-center gap-4 min-w-0">
+                    <div className="cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground">
+                      <GripVertical className="w-5 h-5" />
+                    </div>
                     {(() => {
                       const brand = getBankBranding(displayName);
                       return (
