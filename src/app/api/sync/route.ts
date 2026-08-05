@@ -7,7 +7,7 @@ import { applyCategoriesToTransactions } from '@/lib/categorization';
 
 export async function POST() {
   try {
-    const pluggyClient = getPluggyClient();
+    const pluggyClient = await getPluggyClient();
     const connections = await prisma.connection.findMany();
     const itemIds = connections.map(c => c.externalItemId);
     

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'itemId é obrigatório' }, { status: 400 });
     }
 
-    const pluggyClient = getPluggyClient();
+    const pluggyClient = await getPluggyClient();
     const item = await pluggyClient.fetchItem(itemId);
 
     await prisma.connection.upsert({

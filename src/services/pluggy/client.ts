@@ -116,8 +116,22 @@ export class CustomPluggyClient {
   }
 }
 
-export const getPluggyClient = () => {
-  const clientId = process.env.PLUGGY_CLIENT_ID;
-  const clientSecret = process.env.PLUGGY_CLIENT_SECRET;
+import { prisma } from '@/services/db';
+
+export const getPluggyClient = async () => {
+  let clientId = process.env.PLUGGY_CLIENT_ID;
+  let clientSecret = process.env.PLUGGY_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    const settings = await prisma.setting.findMany({
+      where: { key: { in: ['PLUGGY_CLIENT_ID', 'PLUGGY_CLIENT_SECRET'] } }
+    });
+    
+    for (const s of settings) {
+      if (s.key === 'PLUGGY_CLIENT_ID') clientId = s.value;
+      if (s.key === 'PLUGGY_CLIENT_SECRET') clientSecret = s.value;
+    }
+  }
+
   return new CustomPluggyClient(clientId || '', clientSecret || '');
 };

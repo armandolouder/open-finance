@@ -2,9 +2,20 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+import { prisma } from '@/services/db';
+
 export async function GET() {
-  const clientId = process.env.PLUGGY_CLIENT_ID || '';
-  const clientSecret = process.env.PLUGGY_CLIENT_SECRET || '';
+  const settings = await prisma.setting.findMany({
+    where: { key: { in: ['PLUGGY_CLIENT_ID', 'PLUGGY_CLIENT_SECRET'] } }
+  });
+  
+  let clientId = process.env.PLUGGY_CLIENT_ID || '';
+  let clientSecret = process.env.PLUGGY_CLIENT_SECRET || '';
+
+  for (const s of settings) {
+    if (s.key === 'PLUGGY_CLIENT_ID') clientId = s.value;
+    if (s.key === 'PLUGGY_CLIENT_SECRET') clientSecret = s.value;
+  }
 
   return NextResponse.json({
     clientId,
@@ -16,33 +27,21 @@ export async function POST(request: Request) {
   try {
     const { clientId, clientSecret } = await request.json();
     
-    const envPath = path.join(process.cwd(), '.env.local');
-    
-    let envContent = '';
-    if (fs.existsSync(envPath)) {
-      envContent = fs.readFileSync(envPath, 'utf-8');
-    }
-
-    const updateEnv = (content: string, key: string, value: string) => {
-      const regex = new RegExp(`^${key}=.*$`, 'm');
-      if (regex.test(content)) {
-        return content.replace(regex, `${key}=${value}`);
-      } else {
-        return content + (content.endsWith('\n') || content === '' ? '' : '\n') + `${key}=${value}`;
-      }
-    };
-
     if (clientId !== undefined) {
-      envContent = updateEnv(envContent, 'PLUGGY_CLIENT_ID', clientId);
-      process.env.PLUGGY_CLIENT_ID = clientId;
+      await prisma.setting.upsert({
+        where: { key: 'PLUGGY_CLIENT_ID' },
+        update: { value: clientId },
+        create: { key: 'PLUGGY_CLIENT_ID', value: clientId }
+      });
     }
     
     if (clientSecret && clientSecret !== '••••••••••••••••') {
-      envContent = updateEnv(envContent, 'PLUGGY_CLIENT_SECRET', clientSecret);
-      process.env.PLUGGY_CLIENT_SECRET = clientSecret;
+      await prisma.setting.upsert({
+        where: { key: 'PLUGGY_CLIENT_SECRET' },
+        update: { value: clientSecret },
+        create: { key: 'PLUGGY_CLIENT_SECRET', value: clientSecret }
+      });
     }
-
-    fs.writeFileSync(envPath, envContent.trim() + '\n');
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -14,7 +14,7 @@ export async function DELETE(
 
     // Tentar remover do Pluggy primeiro
     try {
-      const pluggyClient = getPluggyClient();
+      const pluggyClient = await getPluggyClient();
       await pluggyClient.deleteItem(itemId);
     } catch (e: any) {
       console.warn("Aviso: Falha ao deletar item no Pluggy (pode já ter sido removido).", e?.message);

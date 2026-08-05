@@ -5,7 +5,7 @@ import { getPluggyClient } from '@/services/pluggy/client';
 
 export async function GET() {
   try {
-    const pluggy = getPluggyClient();
+    const pluggy = await getPluggyClient();
     const itemIdsStr = process.env.PLUGGY_ITEM_IDS || '';
     const itemIds = itemIdsStr.split(',').map(id => id.trim()).filter(Boolean);
 
