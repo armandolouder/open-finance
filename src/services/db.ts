@@ -11,7 +11,10 @@ function createPrismaClient(): PrismaClient {
   if (!connectionString) {
     return new PrismaClient(); // fallback if not set yet, or throws at runtime
   }
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ 
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
