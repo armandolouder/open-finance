@@ -41,8 +41,17 @@ const TYPE_LABEL: Record<string, string> = {
 
 function getBankLabel(inv: Investment): string {
   const n = (inv.institutionName || '').toLowerCase();
-  if (n.includes('nubank') || n.includes('meupluggy') || inv.name?.toLowerCase().includes('nu financeira')) return 'Nubank';
-  if (n.includes('mercado pago') || n.includes('mercadopago') || inv.name?.toLowerCase().includes('mercado')) return 'Mercado Pago';
+  const name = (inv.name || '').toLowerCase();
+  
+  if (name.includes('mercado pago') || name.includes('mercadopago')) return 'Mercado Pago';
+  if (name.includes('nubank') || name.includes('nu financeira')) return 'Nubank';
+  if (name.includes('inter')) return 'Banco Inter';
+  if (name.includes('itau') || name.includes('itaú')) return 'Itaú';
+  if (name.includes('bradesco')) return 'Bradesco';
+  if (name.includes('santander')) return 'Santander';
+
+  if (n.includes('nubank') || n.includes('meupluggy') || n.includes('nu financeira')) return 'Nubank';
+  if (n.includes('mercado pago') || n.includes('mercadopago')) return 'Mercado Pago';
   if (n.includes('inter')) return 'Banco Inter';
   if (n.includes('itau') || n.includes('itaú')) return 'Itaú';
   if (n.includes('bradesco')) return 'Bradesco';
@@ -187,14 +196,25 @@ export default function InvestmentsPage() {
                         className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-muted/30 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
-                            {isPositive
-                              ? <TrendingUp className="w-4 h-4 text-emerald-500" />
-                              : <TrendingDown className="w-4 h-4 text-destructive" />}
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${isPositive ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+                            {inv.type === 'MANUAL' && getLogoForInvestment(inv) ? (
+                              <img 
+                                src={getLogoForInvestment(inv)!} 
+                                alt="" 
+                                className={cn("w-5 h-5 object-contain", getLogoForInvestment(inv)!.includes('206.svg') || getLogoForInvestment(inv)!.includes('mercadopago') ? "" : "brightness-0 invert")}
+                                onError={(e) => e.currentTarget.style.display = 'none'} 
+                              />
+                            ) : (
+                              isPositive
+                                ? <TrendingUp className="w-4 h-4 text-emerald-500" />
+                                : <TrendingDown className="w-4 h-4 text-destructive" />
+                            )}
                           </div>
                           <div>
                             <p className="font-medium text-foreground text-sm">{friendlyName}</p>
-                            <p className="text-xs text-muted-foreground">{label}</p>
+                            {inv.type !== 'MANUAL' && (
+                              <p className="text-xs text-muted-foreground">{label}</p>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
