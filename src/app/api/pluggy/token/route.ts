@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { PluggyClient } from 'pluggy-sdk';
+import { prisma } from '@/services/db';
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +21,16 @@ export async function POST(req: Request) {
       clientSecret,
     });
 
-    const tokenData = await client.createConnectToken(itemId);
+    const webhookSetting = await prisma.setting.findUnique({
+      where: { key: 'PLUGGY_WEBHOOK_URL' }
+    });
+
+    const options: any = {};
+    if (webhookSetting?.value) {
+      options.webhookUrl = webhookSetting.value;
+    }
+
+    const tokenData = await client.createConnectToken(itemId, options);
 
     return NextResponse.json({ accessToken: tokenData.accessToken });
   } catch (error: any) {
