@@ -16,12 +16,14 @@ export async function GET(request: NextRequest) {
       where: {
         OR: [
           { key: { startsWith: 'card_settings_' } },
-          { key: { startsWith: 'item_name_' } }
+          { key: { startsWith: 'item_name_' } },
+          { key: { startsWith: 'account_label_' } }
         ]
       }
     });
     const cardSettings: Record<string, { dueDay?: number, closingDay?: number, waiverTarget?: number, feeAmount?: number, customName?: string }> = {};
     const customItemNames: Record<string, string> = {};
+    const accountLabels: Record<string, string> = {};
 
     for (const s of settings) {
       if (s.key.startsWith('card_settings_')) {
@@ -30,6 +32,13 @@ export async function GET(request: NextRequest) {
         } catch {}
       } else if (s.key.startsWith('item_name_')) {
         customItemNames[s.key.replace('item_name_', '')] = s.value;
+      } else if (s.key.startsWith('account_label_')) {
+        try {
+          const val = JSON.parse(s.value);
+          if (val.customName) {
+            accountLabels[s.key.replace('account_label_', '')] = val.customName;
+          }
+        } catch {}
       }
     }
 
@@ -194,7 +203,7 @@ export async function GET(request: NextRequest) {
 
       cards.push({
         id: account.externalId,
-        name: customConfig.customName || creditCard.name,
+        name: accountLabels[account.externalId] || customConfig.customName || creditCard.name,
         institution: creditCard.institutionName || 'Desconhecida',
         institutionLogo: null, 
         brand: 'MASTERCARD', 

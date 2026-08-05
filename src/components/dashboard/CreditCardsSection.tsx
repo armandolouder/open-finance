@@ -92,7 +92,6 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
   const [closingDayInput, setClosingDayInput] = useState("");
   const [waiverTargetInput, setWaiverTargetInput] = useState("");
   const [feeAmountInput, setFeeAmountInput] = useState("");
-  const [customNameInput, setCustomNameInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
@@ -195,7 +194,6 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
                         setClosingDayInput(cDay.toString());
                         setWaiverTargetInput(card.waiverTarget ? card.waiverTarget.toString() : "");
                         setFeeAmountInput(card.feeAmount ? card.feeAmount.toString() : "");
-                        setCustomNameInput(card.name || "");
                       }}
                       className="p-1.5 bg-muted text-muted-foreground hover:text-foreground rounded-md transition-opacity cursor-pointer"
                     >
@@ -303,17 +301,7 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
               </button>
             </div>
             <div className="p-4 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Nome do Cartão (Opcional)</label>
-                <input
-                  type="text"
-                  value={customNameInput}
-                  onChange={e => setCustomNameInput(e.target.value)}
-                  placeholder="Ex: Cartão da Empresa"
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Deixe vazio para usar o nome padrão.</p>
-              </div>
+
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground">Dia de Fechamento (1-31)</label>
                 <input
@@ -384,7 +372,6 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
                         closingDay: closingDayInput ? parseInt(closingDayInput) : null,
                         waiverTarget: waiverTargetInput ? parseFloat(waiverTargetInput) : null,
                         feeAmount: feeAmountInput ? parseFloat(feeAmountInput) : null,
-                        customName: customNameInput || null,
                       })
                     });
                     setEditingCard(null);

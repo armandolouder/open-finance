@@ -30,8 +30,12 @@ export async function GET(request: Request) {
         const accId = s.key.replace('account_label_', '');
         try {
           const val = JSON.parse(s.value);
-          if (val.type === 'PF' || val.type === 'PJ') {
-            accountTypes[accId] = val.type;
+          if (val.type === 'PF' || val.type === 'PJ' || val.entityType === 'PF' || val.entityType === 'PJ') {
+            accountTypes[accId] = val.type || val.entityType;
+          }
+          if (val.customName) {
+            if (!accountSettings[accId]) accountSettings[accId] = {};
+            accountSettings[accId].customName = val.customName;
           }
         } catch {}
       } else if (s.key.startsWith('item_name_')) {

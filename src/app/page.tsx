@@ -76,12 +76,6 @@ export default function Dashboard() {
                         <span className="text-[10px] font-bold tracking-wider px-2 py-1 rounded bg-black/20 uppercase">
                           {acc.accountType === 'PJ' ? 'Empresa' : 'Pessoal'}
                         </span>
-                        <button 
-                          onClick={() => setEditingAccount(acc)}
-                          className="w-7 h-7 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/40 transition-colors shrink-0"
-                        >
-                          <Settings className="w-3.5 h-3.5 text-white/80" />
-                        </button>
                       </div>
                     </div>
                     <div className="w-full">
