@@ -1,15 +1,18 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-import path from 'path';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 // Force reload after schema changes
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 function createPrismaClient(): PrismaClient {
-  const dbPath = path.join(process.cwd(), 'dev.db');
-  // O adapter precisa de uma URL no formato "file:/path/to/db"
-  const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    return new PrismaClient(); // fallback if not set yet, or throws at runtime
+  }
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
 
