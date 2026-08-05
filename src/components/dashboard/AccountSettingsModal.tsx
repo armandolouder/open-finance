@@ -28,7 +28,9 @@ export function AccountSettingsModal({ account, onClose, onSaved }: AccountSetti
   const handleSave = async () => {
     setSaving(true);
     
-    const num = parseFloat(investments.replace(/[^\d.,-]/g, '').replace(',', '.'));
+    // Strip everything except digits, comma, and minus sign, then replace comma with dot
+    const cleanStr = investments.replace(/[^\d,-]/g, '').replace(',', '.');
+    const num = parseFloat(cleanStr);
     const finalInvestments = isNaN(num) ? 0 : num;
 
     try {

@@ -2,15 +2,17 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { getPluggyClient } from '@/services/pluggy/client';
+import { prisma } from '@/services/db';
 
 export async function GET() {
   try {
     const pluggy = await getPluggyClient();
-    const itemIdsStr = process.env.PLUGGY_ITEM_IDS || '';
-    const itemIds = itemIdsStr.split(',').map(id => id.trim()).filter(Boolean);
+    const connections = await prisma.connection.findMany();
+    const itemIds = connections.map(c => c.externalItemId);
 
-    const allInvestments = [];
+    const allInvestments: any[] = [];
 
+    // 1. Fetch real investments from Pluggy
     for (const itemId of itemIds) {
       try {
         const [item, investments] = await Promise.all([
@@ -28,6 +30,33 @@ export async function GET() {
         }
       } catch (err: any) {
         console.error(`Erro ao buscar investimentos do item ${itemId}:`, err.message);
+      }
+    }
+
+    // 2. Fetch manual investments from AccountSettings
+    const accounts = await prisma.account.findMany({ include: { connection: true } });
+    const settings = await prisma.setting.findMany({ where: { key: { startsWith: 'account_settings_' } } });
+    const accountSettings: Record<string, any> = {};
+    
+    for (const s of settings) {
+      try {
+        accountSettings[s.key.replace('account_settings_', '')] = JSON.parse(s.value);
+      } catch {}
+    }
+
+    for (const account of accounts) {
+      const invValue = accountSettings[account.externalId]?.investments;
+      if (invValue && invValue > 0) {
+        allInvestments.push({
+          id: `manual_${account.id}`,
+          name: `Saldo Investido`,
+          type: 'OTHER',
+          value: invValue,
+          balance: invValue,
+          institutionName: account.connection.institutionName || 'Desconhecida',
+          institutionLogo: null,
+          connectorName: account.connection.institutionName || '',
+        });
       }
     }
 
