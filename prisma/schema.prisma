@@ -1,0 +1,212 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Entity {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // 'PF' | 'PJ'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  connections     Connection[]
+  accounts        Account[]
+  transactions    Transaction[]
+  creditCards     CreditCard[]
+  creditCardBills CreditCardBill[]
+  investments     Investment[]
+}
+
+model Connection {
+  id              String   @id @default(uuid())
+  externalItemId  String   @unique
+  entityId        String?
+  institutionName String?
+  status          String
+  lastSyncAt      DateTime?
+  lastError       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  entity      Entity?      @relation(fields: [entityId], references: [id])
+  accounts    Account[]
+  investments Investment[]
+}
+
+model Account {
+  id               String   @id @default(uuid())
+  externalId       String   @unique
+  connectionId     String
+  entityId         String?
+  institutionName  String?
+  name             String
+  type             String
+  subtype          String?
+  balance          Float
+  availableBalance Float?
+  currency         String   @default("BRL")
+  lastSyncAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  connection   Connection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  entity       Entity?       @relation(fields: [entityId], references: [id])
+  transactions Transaction[]
+  creditCards  CreditCard[]
+}
+
+model Transaction {
+  id               String   @id @default(uuid())
+  externalId       String   @unique
+  accountId        String
+  entityId         String?
+  date             DateTime
+  description      String
+  amount           Float
+  direction        String   // 'CREDIT' | 'DEBIT'
+  category         String?
+  originalCategory String?
+  customCategory   String?
+  status           String?
+  classification   String?  // 'PERSONAL' | 'BUSINESS' | 'IGNORED'
+  notes            String?
+  
+  // Credit Card Metadata
+  billForecastDate String?  // e.g. "2026-08"
+  purchaseDate     DateTime?
+  totalInstallments Int?
+  installmentNumber Int?
+  cardNumber       String?
+  pluggyUpdatedAt  DateTime? // When Pluggy last returned this transaction
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  entity  Entity? @relation(fields: [entityId], references: [id])
+}
+
+model CreditCard {
+  id              String   @id @default(uuid())
+  externalId      String   @unique
+  accountId       String
+  entityId        String?
+  institutionName String?
+  name            String
+  lastFourDigits  String?
+  creditLimit     Float?
+  availableLimit  Float?
+  closingDay      Int?
+  dueDay          Int?
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  account Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  entity  Entity?          @relation(fields: [entityId], references: [id])
+  bills   CreditCardBill[]
+}
+
+model CreditCardBill {
+  id             String   @id @default(uuid())
+  externalId     String   @unique
+  creditCardId   String
+  entityId       String?
+  referenceMonth String?
+  closingDate    DateTime?
+  dueDate        DateTime?
+  totalAmount    Float
+  minimumAmount  Float?
+  paidAmount     Float?
+  financeCharges Float?
+  status         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  entity     Entity?    @relation(fields: [entityId], references: [id])
+}
+
+model Investment {
+  id              String   @id @default(uuid())
+  externalId      String   @unique
+  connectionId    String
+  entityId        String?
+  institutionName String?
+  name            String
+  code            String?
+  type            String?
+  subtype         String?
+  investedAmount  Float?
+  currentAmount   Float
+  quantity        Float?
+  unitPrice       Float?
+  maturityDate    DateTime?
+  liquidityDate   DateTime?
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  connection Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  entity     Entity?    @relation(fields: [entityId], references: [id])
+}
+
+model SyncLog {
+  id            String   @id @default(uuid())
+  resource      String
+  startedAt     DateTime
+  finishedAt    DateTime?
+  status        String   // 'SUCCESS' | 'ERROR' | 'RUNNING'
+  importedCount Int      @default(0)
+  updatedCount  Int      @default(0)
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // 'FIXED', 'VARIABLE', 'ESSENTIAL', 'NON_ESSENTIAL'
+  color     String?
+  parentId  String?
+  showOnHome Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  parent    Category?  @relation("Subcategories", fields: [parentId], references: [id])
+  children  Category[] @relation("Subcategories")
+
+  rules     TransactionRule[]
+  overrides TransactionOverride[]
+}
+
+model TransactionRule {
+  id         String   @id @default(uuid())
+  categoryId String
+  pattern    String
+  createdAt  DateTime @default(now())
+
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model TransactionOverride {
+  externalId String   @id // Pluggy transaction ID
+  categoryId String
+  createdAt  DateTime @default(now())
+  
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
