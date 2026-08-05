@@ -10,9 +10,14 @@ function createPrismaClient(): PrismaClient {
       const parsedUrl = new URL(url);
       parsedUrl.searchParams.set('sslmode', 'no-verify');
       parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
+      const finalUrl = parsedUrl.toString();
       
-      // Override the env var so Prisma Rust Engine picks it up automatically
-      process.env.POSTGRES_PRISMA_URL = parsedUrl.toString();
+      // @ts-ignore
+      return new PrismaClient({
+        datasources: {
+          db: { url: finalUrl }
+        }
+      });
     } catch(e) {
       // Ignore URL parsing errors
     }
