@@ -1,35 +1,29 @@
 import { PrismaClient } from '@prisma/client';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-
-// Force reload after schema changes
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 function createPrismaClient(): PrismaClient {
   let url = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
   
-  if (url && !url.includes('sslaccept=')) {
-    const separator = url.includes('?') ? '&' : '?';
-    url = `${url}${separator}sslaccept=accept_invalid_certs`;
-  }
-
-  if (!url) {
-    return new PrismaClient(); // fallback if not set yet, or throws at runtime
-  }
-
-  const pool = new Pool({ 
-    connectionString: url,
-    ssl: { rejectUnauthorized: false }
-  });
-  const adapter = new PrismaPg(pool);
-  
-  return new PrismaClient({ 
-    adapter,
-    datasources: {
-      db: { url }
+  if (url) {
+    try {
+      const parsedUrl = new URL(url);
+      // Prisma Rust Engine flags for self-signed certificates
+      parsedUrl.searchParams.set('sslmode', 'no-verify');
+      parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
+      url = parsedUrl.toString();
+      
+      return new PrismaClient({
+        datasources: {
+          db: { url }
+        }
+      });
+    } catch(e) {
+      // Ignore URL parsing errors
     }
-  });
+  }
+
+  return new PrismaClient(); // fallback
 }
 
 // Força a recriação do client (útil após alterações de schema no dev)
