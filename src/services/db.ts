@@ -10,13 +10,17 @@ function createPrismaClient(): PrismaClient {
       const parsedUrl = new URL(url);
       parsedUrl.searchParams.set('sslmode', 'no-verify');
       parsedUrl.searchParams.set('sslaccept', 'accept_invalid_certs');
-      const finalUrl = parsedUrl.toString();
-      
-      const opts: any = { datasourceUrl: finalUrl };
-      return new PrismaClient(opts);
+      url = parsedUrl.toString();
     } catch(e) {
       // Ignore URL parsing errors
     }
+
+    const opts: any = {
+      datasources: {
+        db: { url }
+      }
+    };
+    return new PrismaClient(opts);
   }
 
   return new PrismaClient(); // fallback
