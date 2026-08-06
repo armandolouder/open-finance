@@ -159,7 +159,7 @@ function CardDetailsPageContent() {
   }
 
   return (
-    <div className="w-full max-w-[1200px] pb-20 flex flex-col gap-6">
+    <div className="w-full pb-20 flex flex-col gap-6">
       <div className="flex items-center">
         <button 
           onClick={() => router.push('/cards')} 
