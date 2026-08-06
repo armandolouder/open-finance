@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
-  CreditCard, ChevronLeft, ChevronRight, AlertCircle, Repeat, ArrowLeft
+  CreditCard, ChevronLeft, ChevronRight, AlertCircle, Repeat, ArrowLeft, Calendar, Filter
 } from "lucide-react";
 import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
 import { CsvImportButton } from "@/components/cards/CsvImportButton";
@@ -104,265 +104,199 @@ function CardDetailsPageContent() {
   }, [transactions]);
 
   return (
-    <div className="space-y-6 w-full max-w-6xl pb-20">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push('/')}
-            className="p-2 bg-muted text-muted-foreground hover:text-foreground rounded-xl transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          {card ? (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                {card.institutionLogo ? (
-                  <img src={getBankLogoUrl(card.name, card.institutionName, card.institutionLogo) || undefined} alt="" className="w-8 h-8 object-contain" />
-                ) : (
-                  <CreditCard className="w-5 h-5 text-muted-foreground" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground capitalize leading-snug">{card.name}</h1>
-                <p className="text-xs text-muted-foreground">{card.brand ?? card.institutionName}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="h-10 w-48 bg-muted rounded animate-pulse" />
-          )}
-        </div>
+    <div className="w-full max-w-[1200px] mx-auto pb-20 flex flex-col lg:flex-row gap-6">
+      
+      {/* Esquerda: Informações do Cartão */}
+      <div className="w-full lg:w-[340px] shrink-0 space-y-6">
+        <div className="bg-[#121212] rounded-[16px] p-6 border border-white/5 shadow-2xl">
+           
+           {/* Top header do cartão */}
+           <div className="flex items-center justify-between mb-8">
+             <div className="flex items-center gap-4">
+               <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                 {card?.institutionLogo ? (
+                   <img src={getBankLogoUrl(card.name, card.institutionName, card.institutionLogo) || undefined} alt="" className="w-7 h-7 object-contain" />
+                 ) : (
+                   <CreditCard className="w-6 h-6 text-primary" />
+                 )}
+               </div>
+               <div>
+                 <h2 className="text-white font-bold text-[16px] leading-tight capitalize">{card?.name || "Carregando..."}</h2>
+                 <p className="text-muted-foreground text-[13px] mt-0.5">Detalhes do cartão</p>
+               </div>
+             </div>
+           </div>
 
+           {/* Fatura Atual */}
+           <div className="mb-6">
+             <div className="flex items-center justify-between mb-3">
+               <p className="text-[11px] font-bold text-muted-foreground tracking-widest uppercase">Fatura Atual</p>
+               <span className="text-[12px] font-medium bg-[#1e293b] text-[#38bdf8] px-3 py-1 rounded-full flex items-center gap-1.5">
+                 <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8]"></span>
+                 Em aberto
+               </span>
+             </div>
+             <p className="text-[32px] font-black text-white tracking-tight leading-none">{fmt(activeBill?.total)}</p>
+           </div>
+
+           {/* Breakdown (Fatura / Pago / Restante) */}
+           <div className="grid grid-cols-3 gap-2 py-5 border-y border-white/5 mb-5">
+             <div>
+               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Fatura</p>
+               <p className="text-[13px] font-semibold text-white mt-1.5">{fmt(activeBill?.total)}</p>
+             </div>
+             <div>
+               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Pago</p>
+               <p className="text-[13px] font-semibold text-white mt-1.5">R$ 0,00</p>
+             </div>
+             <div>
+               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Restante</p>
+               <p className="text-[13px] font-semibold text-white mt-1.5">{fmt(activeBill?.total)}</p>
+             </div>
+           </div>
+
+           {/* Datas e Limite */}
+           <div className="space-y-3.5 text-[13px] font-medium text-muted-foreground">
+             <div className="flex items-center gap-3">
+               <Calendar className="w-4 h-4 opacity-50" />
+               <span>Fecha em {card?.closingDate ? new Date(card.closingDate + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) : 'N/A'}</span>
+             </div>
+             <div className="flex items-center gap-3">
+               <Calendar className="w-4 h-4 opacity-50" />
+               <span>Vence em {card?.dueDate ? new Date(card.dueDate + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) : 'N/A'}</span>
+             </div>
+             <div className="flex items-center gap-3">
+               <CreditCard className="w-4 h-4 opacity-50" />
+               <span>Limite disponível: <span className="text-white font-semibold">{card?.availableLimit ? 'R$ ' + card.availableLimit.toLocaleString('pt-BR', {minimumFractionDigits:2}) : 'UNLIMITED'}</span></span>
+             </div>
+           </div>
+
+           <div className="mt-6 pt-5 border-t border-white/5">
+             <p className="text-[12px] leading-relaxed text-muted-foreground flex gap-2.5 items-start">
+               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 opacity-50" />
+               Fatura ainda não fechada pelo banco — os valores são parciais e podem mudar.
+             </p>
+           </div>
+        </div>
       </div>
 
-      {!loading && !error && card && (
-        <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden group/box mb-8">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-            {/* Total Fatura */}
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Total Fatura</p>
-              <p className="text-3xl font-black text-amber-500 tracking-tight">{fmt(activeBill?.total)}</p>
-              <p className="text-xs font-medium text-muted-foreground mt-2">
-                Mínimo: {fmt(card.minimumPayment)}
-              </p>
-            </div>
+      {/* Direita: Lançamentos */}
+      <div className="flex-1 min-w-0">
+        
+        {/* Header month selector */}
+        <div className="flex items-center justify-between mb-8">
+           <div className="flex items-center gap-2 bg-[#121212] rounded-full px-1 py-1 border border-white/5">
+             <button onClick={() => router.push(`?month=${prevMonth(month)}`)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-muted-foreground hover:text-white"><ChevronLeft className="w-4 h-4" /></button>
+             <div className="flex items-center gap-2 text-[14px] font-semibold text-white px-2">
+               <Calendar className="w-4 h-4 text-muted-foreground" />
+               {monthLabel(month).charAt(0).toUpperCase() + monthLabel(month).slice(1)}
+             </div>
+             <button onClick={() => router.push(`?month=${nextMonth(month)}`)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-muted-foreground hover:text-white"><ChevronRight className="w-4 h-4" /></button>
+           </div>
+           
+           <button onClick={() => router.push('/')} className="px-4 py-2 bg-[#121212] hover:bg-white/5 border border-white/5 rounded-full text-[13px] font-semibold text-white transition-colors flex items-center gap-2">
+             <Filter className="w-3.5 h-3.5" /> Filtrar
+           </button>
+        </div>
 
-            {/* Limite */}
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Limite Disponível</p>
-              <p className="text-3xl font-black text-emerald-500 tracking-tight">{fmt(card.availableLimit)}</p>
-            </div>
-
-            {/* Isenção */}
-            {card.waiverTarget ? (() => {
-              const currentTotal = activeBill?.total ?? 0;
-              const isExempt = currentTotal >= card.waiverTarget;
-              const feeCharged = card.feeAmount ? activeBill?.transactions.some(t => Math.abs(t.amount) === card.feeAmount) : false;
-
-              return (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-end">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                      Meta de Isenção
-                    </p>
-                    <p className="text-xs font-mono font-semibold text-foreground tracking-tight">{fmt(currentTotal)} / {fmt(card.waiverTarget)}</p>
-                  </div>
-                  
-                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className={cn("h-full transition-all duration-500", isExempt ? "bg-emerald-500" : "bg-gradient-to-r from-amber-500 to-amber-300")} 
-                      style={{ width: `${Math.min(100, (currentTotal / card.waiverTarget) * 100)}%` }}
-                    />
-                  </div>
-                  
-                  {card.feeAmount && (
-                    <div className="pt-1">
-                      {feeCharged ? (
-                        <p className="text-[10px] text-destructive flex items-center gap-1.5 font-medium bg-destructive/10 px-2 py-1.5 rounded w-max">
-                          <AlertCircle className="w-3.5 h-3.5" /> Anuidade de {fmt(card.feeAmount)} cobrada.
-                        </p>
-                      ) : isExempt ? (
-                        <p className="text-[10px] text-emerald-400 flex items-center gap-1.5 font-medium bg-emerald-400/10 px-2 py-1.5 rounded w-max">
-                          <AlertCircle className="w-3.5 h-3.5" /> Meta alcançada! Economia de {fmt(card.feeAmount)}.
-                        </p>
-                      ) : (
-                        <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-                          Anuidade padrão: <span className="text-foreground">{fmt(card.feeAmount)}</span>
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })() : (
-              <div className="flex h-full items-center justify-center opacity-30">
-                <p className="text-xs font-medium text-muted-foreground">Sem meta de isenção</p>
+        {/* Lançamentos Title & CSV */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[20px] font-bold text-white tracking-tight">Lançamentos da fatura</h1>
+            <p className="text-[14px] text-muted-foreground mt-1">Despesas e parcelas vinculadas a este período</p>
+            {transactions.filter(t => t.isManual).length > 0 && (
+              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[12px] font-medium">
+                <span className="text-emerald-500">✓</span> {transactions.filter(t => t.isManual).length} lançamentos recuperados via CSV
+                <span className="opacity-60 ml-1">
+                  (R$ {transactions.filter(t => t.isManual).reduce((s, t) => s + Math.abs(t.amount), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                </span>
               </div>
             )}
           </div>
-          
-          {card.dueDate && (
-            <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-4 text-xs font-medium text-muted-foreground">
-              <span className="flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5 text-amber-500" /> Vencimento: {new Date(card.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
-              <span className="opacity-40">|</span>
-              <span>Fechamento: {card.closingDate ? new Date(card.closingDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'N/A'}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+             <span className="text-[13px] text-muted-foreground font-medium">{transactions.length} transações</span>
+             <CsvImportButton cardId={cardId} month={month} currentTotal={activeBill?.total ?? 0} onImportDone={() => fetchData(month)} />
+          </div>
         </div>
-      )}
 
-      {loading && (
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="flex-1 h-[600px] rounded-2xl bg-muted animate-pulse" />
-          <div className="w-full lg:w-[340px] h-[600px] rounded-2xl bg-muted animate-pulse shrink-0" />
-        </div>
-      )}
+        {/* Tabela de Lançamentos */}
+        <div className="bg-[#121212] rounded-[16px] border border-white/5 overflow-hidden shadow-2xl">
+           {/* Table Header */}
+           <div className="hidden sm:grid grid-cols-[100px_1fr_200px_120px] gap-4 px-6 py-4 border-b border-white/5 text-[12px] font-bold text-muted-foreground uppercase tracking-widest">
+             <div>Data</div>
+             <div>Descrição</div>
+             <div>Categoria</div>
+             <div className="text-right">Valor</div>
+           </div>
 
-      {error && (
-        <div className="rounded-2xl bg-destructive/10 border border-destructive/30 p-6 text-destructive">{error}</div>
-      )}
-
-      {!loading && !error && card && (
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
-          {/* Coluna Esquerda: Lista de Transações */}
-          <div className="flex-1 w-full rounded-3xl bg-[#0a0a0a] border border-white/5 overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-white/5 flex flex-col gap-4 bg-white/[0.01]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground tracking-tight">Lançamentos</h2>
-                  <p className="text-sm text-muted-foreground mt-1">{transactions.length} compras na fatura</p>
-                  {transactions.filter(t => t.isManual).length > 0 && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-medium">
-                      <span className="text-emerald-500">✓</span> {transactions.filter(t => t.isManual).length} lançamentos recuperados via CSV
-                      <span className="opacity-60 ml-1">
-                        (R$ {transactions.filter(t => t.isManual).reduce((s, t) => s + Math.abs(t.amount), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                      </span>
+           {/* Table Body */}
+           <div className="divide-y divide-white/5">
+             {transactions.length === 0 ? (
+                <div className="p-16 text-center text-muted-foreground">
+                  <div className="flex justify-center mb-5">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                      <AlertCircle className="w-8 h-8 opacity-50 text-foreground" />
                     </div>
-                  )}
-                </div>
-              </div>
-              <CsvImportButton
-                cardId={cardId}
-                month={month}
-                currentTotal={activeBill?.total ?? 0}
-                onImportDone={() => fetchData(month)}
-              />
-            </div>
-
-            {transactions.length === 0 ? (
-              <div className="p-16 text-center text-muted-foreground">
-                <div className="flex justify-center mb-5">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-                    <AlertCircle className="w-8 h-8 opacity-50 text-foreground" />
                   </div>
+                  <p className="text-lg">Nenhuma compra encontrada nesta fatura.</p>
                 </div>
-                <p className="text-lg">Nenhuma compra encontrada nesta fatura.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/5 max-h-[75vh] overflow-y-auto custom-scrollbar">
-                {transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-white/[0.03] transition-colors group">
+             ) : (
+               transactions.map(tx => (
+                 <div key={tx.id} className="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr_200px_120px] gap-4 px-6 py-4 items-center hover:bg-white/[0.02] transition-colors group">
+                    
+                    {/* Data */}
+                    <div className="text-[13px] font-medium text-white/70 leading-tight hidden sm:block">
+                       {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}<br/>
+                       <span className="text-[11px] text-muted-foreground/60">{new Date(tx.date).getFullYear()}</span>
+                    </div>
+
+                    {/* Descrição */}
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 border border-white/5 group-hover:scale-105 transition-transform">
-                        {tx.totalInstallments && tx.totalInstallments > 1 ? (
-                          <Repeat className="w-5 h-5 text-foreground/50" />
-                        ) : (
-                          <CreditCard className="w-5 h-5 text-foreground/50" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-mono text-[13px] font-medium text-emerald-400/90 uppercase tracking-wider truncate">{tx.description}</p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span 
-                            className={cn(
-                              "text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md font-medium",
-                              tx.categoryColor 
-                                ? "text-white" 
-                                : "text-muted-foreground bg-white/10"
-                            )}
-                            style={tx.categoryColor ? { backgroundColor: tx.categoryColor } : {}}
-                          >
-                            {tx.category ?? "Outros"}
-                          </span>
-                          <div className="flex items-center gap-1 ml-1 text-[10px] uppercase tracking-wider font-medium text-muted-foreground bg-white/5 border border-white/5 px-2 py-0.5 rounded-md">
-                            <span>Origem:</span>
-                            <span className={tx.isManual ? "text-emerald-400" : "text-foreground"}>
-                              {tx.isManual ? "CSV Nubank" : "Pluggy"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                       <div className="w-10 h-10 rounded-full bg-[#1e1e1e] flex items-center justify-center shrink-0 border border-white/5 group-hover:scale-105 transition-transform">
+                         {tx.isManual ? (
+                           <span className="text-emerald-400 font-bold text-[10px]">CSV</span>
+                         ) : tx.totalInstallments && tx.totalInstallments > 1 ? (
+                           <Repeat className="w-4 h-4 text-emerald-400" />
+                         ) : (
+                           <CreditCard className="w-4 h-4 text-emerald-400" />
+                         )}
+                       </div>
+                       <div className="min-w-0">
+                         <p className="font-semibold text-[14px] text-white/90 truncate">{tx.description}</p>
+                         <div className="sm:hidden text-[12px] text-muted-foreground mt-0.5">
+                           {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                         </div>
+                         {tx.totalInstallments && tx.totalInstallments > 1 && (
+                            <p className="text-[12px] text-muted-foreground mt-0.5">Parcela {tx.installmentNumber}/{tx.totalInstallments}</p>
+                         )}
+                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className={cn("font-mono font-medium text-[15px]", tx.amount < 0 ? "text-emerald-500" : "text-foreground")}>
-                        {tx.amount < 0 ? "+" : ""}{fmt(Math.abs(tx.amount))}
-                      </p>
-                      {tx.totalInstallments && tx.totalInstallments > 1 ? (
-                        <p className="text-[11px] text-muted-foreground mt-1.5 uppercase tracking-wider font-medium">
-                          Parc. {tx.installmentNumber} de {tx.totalInstallments}
-                        </p>
-                      ) : (
-                        <p className="text-[11px] text-muted-foreground mt-1.5 uppercase tracking-wider font-medium">
-                          {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Coluna Direita: Sidebar de Resumo Agrupado */}
-          <div className="w-full lg:w-[360px] shrink-0 space-y-4">
-            <div className="rounded-3xl bg-card border border-border p-7 shadow-sm sticky top-6">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-6 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                Resumo de Gastos
-              </h3>
-              
-              {groupedTransactions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Sem dados para resumir.</p>
-              ) : (
-                <div className="space-y-1 max-h-[70vh] overflow-y-auto pr-3 custom-scrollbar">
-                  {groupedTransactions.map((group, index) => (
-                    <div key={index} className="group/item relative py-3 border-b border-dashed border-border/60 last:border-0">
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex flex-col gap-1 min-w-0">
-                          <span className="font-mono text-[13px] font-medium text-emerald-400/90 uppercase tracking-wider truncate block leading-tight">
-                            {group.name}
+                    {/* Categoria */}
+                    <div className="hidden sm:block">
+                       <p className="font-semibold text-[14px] text-white/90">{tx.category || "Outros"}</p>
+                       <div className="mt-1">
+                          <span className={cn(
+                            "text-[10px] font-semibold px-1.5 py-0.5 rounded tracking-wide uppercase",
+                            tx.isManual ? "text-emerald-400 bg-emerald-400/10" : "text-muted-foreground bg-white/5"
+                          )}>
+                            Origem: {tx.isManual ? "CSV" : "Pluggy"}
                           </span>
-                          {group.category && (
-                            <span 
-                              className={cn(
-                                "text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md font-medium w-max",
-                                group.categoryColor 
-                                  ? "text-white" 
-                                  : "text-muted-foreground bg-white/10"
-                              )}
-                              style={group.categoryColor ? { backgroundColor: group.categoryColor } : {}}
-                            >
-                              {group.category}
-                            </span>
-                          )}
-                        </div>
-                        <span className="font-mono font-medium text-[15px] text-foreground shrink-0 tabular-nums">
-                          {fmt(group.amount)}
-                        </span>
-                      </div>
+                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
+
+                    {/* Valor */}
+                    <div className="text-right">
+                       <p className={cn("font-medium text-[15px]", tx.amount < 0 ? "text-[#f87171]" : "text-[#4ade80]")}>
+                         {tx.amount < 0 ? "-" : "+"} {fmt(Math.abs(tx.amount))}
+                       </p>
+                    </div>
+                 </div>
+               ))
+             )}
+           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
