@@ -28,19 +28,27 @@ function ExpensesPageContent() {
     transactions: Transaction[];
     projections: Transaction[];
   }>({ transactions: [], projections: [] });
+  const [realCardTotal, setRealCardTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchData = useCallback((m: string) => {
     setLoading(true);
-    fetch(`/api/expenses?month=${m}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!d.error) {
-          setData(d);
-        }
-      })
-      .finally(() => setLoading(false));
+    
+    Promise.all([
+      fetch(`/api/expenses?month=${m}`).then(r => r.json()),
+      fetch(`/api/cards?month=${m}`).then(r => r.json())
+    ]).then(([expensesData, cardsData]) => {
+      if (!expensesData.error) {
+        setData(expensesData);
+      }
+      if (cardsData.cards) {
+        const totalFaturas = cardsData.cards.reduce((sum: number, card: any) => {
+          return sum + (card.bills?.[0]?.total || 0);
+        }, 0);
+        setRealCardTotal(totalFaturas);
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchData(month); }, [month, fetchData]);
@@ -53,7 +61,6 @@ function ExpensesPageContent() {
   const cardItems = allItems.filter(t => t.isCreditCard);
 
   const totalMensal = bankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const totalCartoes = cardItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
   const pending = (data.projections || []).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
   return (
@@ -87,9 +94,9 @@ function ExpensesPageContent() {
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-16 h-16 bg-blue-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
           <p className="text-sm text-muted-foreground mb-1">Cartões</p>
-          <p className="text-2xl font-bold">R$ {totalCartoes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold">R$ {realCardTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Check className="w-3 h-3 text-blue-500" /> {cardItems.length} despesas
+            <Check className="w-3 h-3 text-blue-500" /> Vencimento no mês
           </p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
