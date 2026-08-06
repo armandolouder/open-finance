@@ -21,7 +21,18 @@ export async function GET(req: Request) {
           gte: startDate,
           lte: endDate,
         },
-        direction: 'DEBIT'
+        direction: 'DEBIT',
+        category: {
+          notIn: ['Transfer', 'Same person transfer', 'Credit Card Payment']
+        },
+        classification: {
+          not: 'IGNORED'
+        },
+        description: {
+          not: {
+            startsWith: 'Transferência enviada'
+          }
+        }
       },
       include: { account: true }
     });
