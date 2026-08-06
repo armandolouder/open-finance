@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/services/db";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const data = await req.json();
-    const id = params.id;
+    const { id } = await params;
 
     const expense = await prisma.recurringExpense.update({
       where: { id },
@@ -34,9 +34,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     await prisma.recurringExpense.delete({
       where: { id }
     });

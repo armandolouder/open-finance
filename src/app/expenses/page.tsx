@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-  ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus
+  ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus, TrendingDown
 } from "lucide-react";
 import { cn, monthKey, monthLabel } from "@/lib/utils";
 import { ExpenseModal } from "@/components/expenses/ExpenseModal";
@@ -16,7 +16,7 @@ interface Transaction {
   isProjected?: boolean;
 }
 
-export default function ExpensesPage() {
+function ExpensesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const month = searchParams.get("month") || monthKey(new Date());
@@ -159,7 +159,7 @@ export default function ExpensesPage() {
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{t.title || t.description}</p>
+                  <p className="font-medium text-foreground truncate">{(t as any).title || t.description}</p>
                   <p className="text-xs text-muted-foreground">
                     {t.isProjected ? "Pendente" : "Pago"}
                   </p>
@@ -179,5 +179,13 @@ export default function ExpensesPage() {
         onSaved={() => fetchData(month)} 
       />
     </div>
+  );
+}
+
+export default function ExpensesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}>
+      <ExpensesPageContent />
+    </Suspense>
   );
 }

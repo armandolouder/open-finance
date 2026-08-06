@@ -23,7 +23,7 @@ export async function GET(req: Request) {
         },
         direction: 'DEBIT'
       },
-      include: { category: true, account: true }
+      include: { account: true }
     });
 
     // Get active recurring expenses to project
