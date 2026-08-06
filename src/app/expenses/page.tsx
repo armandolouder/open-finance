@@ -1,0 +1,183 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus
+} from "lucide-react";
+import { cn, monthKey, monthLabel } from "@/lib/utils";
+import { ExpenseModal } from "@/components/expenses/ExpenseModal";
+
+interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  isProjected?: boolean;
+}
+
+export default function ExpensesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const month = searchParams.get("month") || monthKey(new Date());
+  
+  const [data, setData] = useState<{
+    transactions: Transaction[];
+    projections: Transaction[];
+  }>({ transactions: [], projections: [] });
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchData = useCallback((m: string) => {
+    setLoading(true);
+    fetch(`/api/expenses?month=${m}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.error) {
+          setData(d);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchData(month); }, [month, fetchData]);
+
+  // Combine and sort
+  const allItems = [...data.transactions, ...(data.projections || [])]
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const total = allItems.reduce((acc, t) => acc + t.amount, 0);
+  const totalPaid = data.transactions.reduce((acc, t) => acc + t.amount, 0);
+  const pending = (data.projections || []).reduce((acc, t) => acc + t.amount, 0);
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <span className="text-emerald-500">
+              <Calendar className="w-6 h-6" />
+            </span>
+            Despesas
+          </h1>
+          <p className="text-muted-foreground text-sm">Gestão de despesas mensais e únicas com categorias</p>
+        </div>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 font-medium transition-colors"
+        >
+          <Plus className="w-4 h-4" /> Nova Despesa
+        </button>
+      </div>
+
+      {/* Month Selector */}
+      <div className="flex items-center gap-4 bg-card/50 w-fit p-1 rounded-xl border border-border">
+        <button
+          onClick={() => {
+            const d = new Date(month + "-01T12:00:00Z");
+            d.setMonth(d.getMonth() - 1);
+            router.push(`/expenses?month=${monthKey(d)}`);
+          }}
+          className="p-2 hover:bg-accent rounded-lg text-muted-foreground"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="font-semibold text-sm min-w-[120px] text-center capitalize">
+          {monthLabel(month)}
+        </div>
+        <button
+          onClick={() => {
+            const d = new Date(month + "-01T12:00:00Z");
+            d.setMonth(d.getMonth() + 1);
+            router.push(`/expenses?month=${monthKey(d)}`);
+          }}
+          className="p-2 hover:bg-accent rounded-lg text-muted-foreground"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground mb-1">Total Mensal</p>
+          <p className="text-2xl font-bold">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-muted-foreground mt-2">{allItems.length} despesas</p>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
+          <p className="text-sm text-muted-foreground mb-1">Pago no mês</p>
+          <p className="text-2xl font-bold">R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+            <Check className="w-3 h-3 text-emerald-500" /> {data.transactions.length} confirmadas
+          </p>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-16 h-16 bg-amber-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
+          <p className="text-sm text-muted-foreground mb-1">Pendente</p>
+          <p className="text-2xl font-bold">R$ {pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+            <Clock className="w-3 h-3 text-amber-500" /> {(data.projections || []).length} aguardando
+          </p>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground mb-1">Pago a mais</p>
+          <p className="text-2xl font-bold">R$ 0,00</p>
+          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-red-500" /> dentro do previsto
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-border">
+        <button className="px-4 py-2 border-b-2 border-primary text-foreground font-medium">Despesas</button>
+        <button className="px-4 py-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground">Categorias</button>
+      </div>
+
+      {/* Expenses List */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-6 py-4 border-b border-border bg-muted/20 flex justify-between items-center">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <span className="text-emerald-500"><TrendingDown className="w-4 h-4" /></span>
+            Despesas Mensais ({allItems.length})
+          </h2>
+        </div>
+        <div className="divide-y divide-border">
+          {loading ? (
+            <div className="p-8 text-center text-muted-foreground">Carregando...</div>
+          ) : allItems.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">Nenhuma despesa este mês.</div>
+          ) : (
+            allItems.map((t, i) => (
+              <div key={i} className="flex items-center gap-4 p-4 hover:bg-accent/50 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-muted/30 flex flex-col items-center justify-center shrink-0">
+                  <span className="text-[10px] text-muted-foreground uppercase leading-none mb-1">Dia</span>
+                  <span className="font-bold text-foreground leading-none">
+                    {new Date(t.date || (t as any).projectedDate).getDate()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{t.title || t.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.isProjected ? "Pendente" : "Pago"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-foreground">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+      
+      <ExpenseModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSaved={() => fetchData(month)} 
+      />
+    </div>
+  );
+}

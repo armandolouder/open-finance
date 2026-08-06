@@ -14,6 +14,7 @@ const navItems = [
   { name: "Transações", href: "/transactions", icon: ArrowRightLeft },
   { name: "Cartões", href: "/cards", icon: CreditCard },
   { name: "Faturas", href: "/bills", icon: Receipt },
+  { name: "Despesas", href: "/expenses", icon: Receipt },
   { name: "Investimentos", href: "/investments", icon: TrendingUp },
   { name: "Sincronização", href: "/sync", icon: RefreshCw },
   { name: "Categorias", href: "/categories", icon: Tag },

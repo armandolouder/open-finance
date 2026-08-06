@@ -58,11 +58,12 @@ model Account {
   entity       Entity?       @relation(fields: [entityId], references: [id])
   transactions Transaction[]
   creditCards  CreditCard[]
+  recurringExpenses RecurringExpense[]
 }
 
 model Transaction {
   id               String   @id @default(uuid())
-  externalId       String   @unique
+  externalId       String?  @unique
   accountId        String
   entityId         String?
   date             DateTime
@@ -76,6 +77,10 @@ model Transaction {
   classification   String?  // 'PERSONAL' | 'BUSINESS' | 'IGNORED'
   notes            String?
   
+  // Manual / Recurring fields
+  isManual         Boolean  @default(false)
+  recurringExpenseId String?
+  
   // Credit Card Metadata
   billForecastDate String?  // e.g. "2026-08"
   purchaseDate     DateTime?
@@ -87,8 +92,9 @@ model Transaction {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  entity  Entity? @relation(fields: [entityId], references: [id])
+  account          Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  entity           Entity? @relation(fields: [entityId], references: [id])
+  recurringExpense RecurringExpense? @relation(fields: [recurringExpenseId], references: [id])
 }
 
 model CreditCard {
@@ -110,6 +116,7 @@ model CreditCard {
   account Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
   entity  Entity?          @relation(fields: [entityId], references: [id])
   bills   CreditCardBill[]
+  recurringExpenses RecurringExpense[]
 }
 
 model CreditCardBill {
@@ -191,6 +198,7 @@ model Category {
 
   rules     TransactionRule[]
   overrides TransactionOverride[]
+  recurringExpenses RecurringExpense[]
 }
 
 model TransactionRule {
@@ -208,4 +216,30 @@ model TransactionOverride {
   createdAt  DateTime @default(now())
   
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model RecurringExpense {
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  amount          Float
+  type            String   // 'EXPENSE' | 'INCOME'
+  frequency       String   // 'MONTHLY', 'YEARLY', 'INSTALLMENT'
+  startDate       DateTime
+  endDate         DateTime?
+  dayOfMonth      Int?
+  accountId       String?
+  creditCardId    String?
+  categoryId      String?
+  status          String   @default("ACTIVE") // 'ACTIVE' | 'CANCELLED'
+  totalInstallments Int?
+  tags            String?  // JSON or comma separated
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  account         Account?    @relation(fields: [accountId], references: [id])
+  creditCard      CreditCard? @relation(fields: [creditCardId], references: [id])
+  category        Category?   @relation(fields: [categoryId], references: [id])
+  transactions    Transaction[]
 }
