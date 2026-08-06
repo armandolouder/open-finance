@@ -75,7 +75,7 @@ function ExpensesPageContent() {
   const activeItems = allItems.filter(t => !t.isIgnored);
   const activeBankItems = bankItems.filter(t => !t.isIgnored);
 
-  const totalRelatorio = activeItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const totalRelatorio = allItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
   const totalMensal = activeBankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0) + realCardTotal;
   const pending = (data.projections || []).filter(t => !t.isIgnored).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
