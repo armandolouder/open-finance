@@ -158,13 +158,12 @@ export async function GET(request: NextRequest) {
       // ------------------------------------
 
       const total = uniqueTxns.reduce((s: number, t: any) => {
-        if (t.direction === 'CREDIT' && (t.category === 'Credit card payment' || t.description?.toLowerCase().includes('pagamento'))) {
+        const isPayment = t.category?.toLowerCase() === 'credit card payment' || 
+                          t.description?.toLowerCase().includes('pagamento');
+        if (isPayment) {
           return s;
         }
-        if (t.direction === 'CREDIT') {
-          return s - Math.abs(t.amount);
-        }
-        return s + Math.abs(t.amount);
+        return s + t.amount;
       }, 0);
 
       const bills = [{
