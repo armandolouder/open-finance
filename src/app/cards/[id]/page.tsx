@@ -6,6 +6,7 @@ import {
   CreditCard, ChevronLeft, ChevronRight, AlertCircle, Repeat, ArrowLeft
 } from "lucide-react";
 import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
+import { CsvImportButton } from "@/components/cards/CsvImportButton";
 
 const fmt = (v: number | undefined | null) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -228,11 +229,18 @@ function CardDetailsPageContent() {
           
           {/* Coluna Esquerda: Lista de Transações */}
           <div className="flex-1 w-full rounded-3xl bg-[#0a0a0a] border border-white/5 overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.01]">
-              <div>
-                <h2 className="text-xl font-bold text-foreground tracking-tight">Lançamentos</h2>
-                <p className="text-sm text-muted-foreground mt-1">{transactions.length} compras na fatura</p>
+            <div className="p-6 border-b border-white/5 flex flex-col gap-4 bg-white/[0.01]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground tracking-tight">Lançamentos</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{transactions.length} compras na fatura</p>
+                </div>
               </div>
+              <CsvImportButton
+                cardId={cardId}
+                currentTotal={activeBill?.total ?? 0}
+                onImportDone={() => fetchData(month)}
+              />
             </div>
 
             {transactions.length === 0 ? (
