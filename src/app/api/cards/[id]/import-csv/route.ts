@@ -64,11 +64,11 @@ function isSameTransaction(
   const csvDate = new Date(csvTx.date + 'T12:00:00');
   const dbDate = new Date(dbTx.date);
 
-  // Tolerância de ±2 dias (Pluggy às vezes registra com 1 dia de diferença)
+  // Tolerância de ±1 dia (Pluggy registra com 1 dia de diferença às vezes)
   const daysDiff = Math.abs((csvDate.getTime() - dbDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (daysDiff > 2) return false;
+  if (daysDiff > 1) return false;
 
-  // Valores devem ser idênticos (positivo = compra)
+  // Valores devem ser idênticos
   const csvAmt = Math.abs(csvTx.amount);
   const dbAmt = Math.abs(dbTx.amount);
 
@@ -82,23 +82,7 @@ export async function POST(
   try {
     const { id: accountExternalId } = await params;
 
-    // Buscar o account no banco
-    const account = await prisma.account.findUnique({
-      where: { externalId: accountExternalId },
-      include: {
-        transactions: {
-          select: { date: true, amount: true, description: true, externalId: true },
-          orderBy: { date: 'desc' },
-          take: 500,
-        }
-      }
-    });
-
-    if (!account) {
-      return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
-    }
-
-    // Ler o CSV do body (multipart/form-data)
+    // Ler o CSV primeiro para descobrir o range de datas
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
@@ -111,6 +95,30 @@ export async function POST(
 
     if (csvTransactions.length === 0) {
       return NextResponse.json({ error: 'Nenhuma transação encontrada no CSV. Verifique o formato.' }, { status: 400 });
+    }
+
+    // Determinar janela de datas do CSV para busca focada no DB
+    const csvDates = csvTransactions.map(t => new Date(t.date + 'T12:00:00').getTime());
+    const csvMinDate = new Date(Math.min(...csvDates));
+    const csvMaxDate = new Date(Math.max(...csvDates));
+    csvMinDate.setDate(csvMinDate.getDate() - 5); // margem de 5 dias para frente/trás
+    csvMaxDate.setDate(csvMaxDate.getDate() + 5);
+
+    // Buscar account com transações SOMENTE dentro da janela do CSV (evita falsos positivos de meses anteriores)
+    const account = await prisma.account.findUnique({
+      where: { externalId: accountExternalId },
+      include: {
+        transactions: {
+          where: {
+            date: { gte: csvMinDate, lte: csvMaxDate }
+          },
+          select: { date: true, amount: true, description: true, externalId: true },
+        }
+      }
+    });
+
+    if (!account) {
+      return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
     }
 
     const existingTxns = account.transactions;
