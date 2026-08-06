@@ -90,7 +90,7 @@ export async function POST() {
           }
 
           // Fetch transactions
-          const { transactions } = await pluggyClient.fetchTransactions(acc.id, 500);
+          const { transactions } = await pluggyClient.fetchTransactions(acc.id);
           
           // Apply categories
           const processedTransactions = await applyCategoriesToTransactions(transactions);
