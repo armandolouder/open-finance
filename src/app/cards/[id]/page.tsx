@@ -158,6 +158,8 @@ function CardDetailsPageContent() {
     );
   }
 
+
+
   return (
     <div className="w-full pb-20 flex flex-col gap-6">
       <div className="flex items-center">
@@ -241,7 +243,47 @@ function CardDetailsPageContent() {
                Fatura ainda não fechada pelo banco — os valores são parciais e podem mudar.
              </p>
            </div>
-        </div>
+         </div>
+
+         {/* Resumo por Lançamento */}
+         <div className="bg-[#121212] rounded-[16px] p-6 border border-white/5 shadow-2xl">
+           <h3 className="text-[13px] font-bold text-white uppercase tracking-wider mb-5 flex items-center gap-2">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+             Resumo por Lançamento
+           </h3>
+           
+           {groupedTransactions.length === 0 ? (
+             <p className="text-[13px] text-muted-foreground text-center py-4">Nenhum gasto para resumir.</p>
+           ) : (
+             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+               {groupedTransactions.map((group, index) => (
+                 <div key={index} className="flex justify-between items-start gap-3">
+                   <div className="flex flex-col gap-1 min-w-0">
+                     <span className="font-semibold text-[13px] text-white truncate leading-tight">
+                       {group.name}
+                     </span>
+                     {group.category && (
+                       <span 
+                         className={cn(
+                           "text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded font-medium w-max",
+                           group.categoryColor 
+                             ? "text-white" 
+                             : "text-muted-foreground bg-white/5"
+                         )}
+                         style={group.categoryColor ? { backgroundColor: group.categoryColor } : {}}
+                       >
+                         {group.category}
+                       </span>
+                     )}
+                   </div>
+                   <span className="font-bold text-[14px] text-white shrink-0">
+                     {fmt(group.amount)}
+                   </span>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
       </div>
 
       {/* Direita: Lançamentos */}
