@@ -61,9 +61,55 @@ export async function GET(req: Request) {
       return {
         ...re,
         projectedDate: projDate,
-        isProjected: true
+        isProjected: true,
+        title: re.title
       };
     });
+
+    // Automatically project future installments from Pluggy API
+    const pastInstallments = await prisma.transaction.findMany({
+      where: {
+        date: { lt: startDate },
+        direction: 'DEBIT',
+        totalInstallments: { gt: 1 },
+        installmentNumber: { not: null }
+      }
+    });
+
+    const latestInstallments = new Map<string, any>();
+    for (const t of pastInstallments) {
+      const key = `${t.description.trim().toLowerCase()}-${t.totalInstallments}`;
+      const existing = latestInstallments.get(key);
+      if (!existing || t.date > existing.date) {
+        latestInstallments.set(key, t);
+      }
+    }
+
+    for (const t of latestInstallments.values()) {
+      const existsInCurrentMonth = transactions.some(
+        curr => curr.description.trim().toLowerCase() === t.description.trim().toLowerCase() && curr.totalInstallments === t.totalInstallments
+      );
+
+      if (!existsInCurrentMonth) {
+        const diffMonths = (year - t.date.getFullYear()) * 12 + (month - (t.date.getMonth() + 1));
+        
+        if (diffMonths > 0) {
+          const projectedInstallmentNumber = t.installmentNumber + diffMonths;
+          
+          if (projectedInstallmentNumber <= t.totalInstallments) {
+            const projDate = new Date(year, month - 1, t.date.getDate());
+            projections.push({
+              ...t,
+              id: `proj_api_${t.id}_${month}`,
+              installmentNumber: projectedInstallmentNumber,
+              projectedDate: projDate,
+              isProjected: true,
+              title: t.description
+            } as any);
+          }
+        }
+      }
+    }
 
     return NextResponse.json({
       transactions,
