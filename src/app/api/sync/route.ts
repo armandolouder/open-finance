@@ -10,7 +10,7 @@ export async function POST() {
     const pluggyClient = await getPluggyClient();
     const connections = await prisma.connection.findMany();
     const itemIds = connections.map(c => c.externalItemId);
-    
+
     if (itemIds.length === 0) {
       return NextResponse.json(
         { error: 'Nenhum banco conectado encontrado. Por favor, conecte um banco primeiro.' },
@@ -29,7 +29,7 @@ export async function POST() {
           console.warn(`Não foi possível forçar a atualização do item ${itemId} (possivelmente é do Sandbox): ${updateErr.message}. Tentando apenas buscar os dados...`);
           item = await pluggyClient.fetchItem(itemId);
         }
-        
+
         // Upsert Connection
         const connection = await prisma.connection.upsert({
           where: { externalItemId: item.id },
@@ -91,7 +91,7 @@ export async function POST() {
 
           // Fetch transactions
           const { transactions } = await pluggyClient.fetchTransactions(acc.id);
-          
+
           // Apply categories
           const processedTransactions = await applyCategoriesToTransactions(transactions, acc.name);
 
@@ -106,7 +106,7 @@ export async function POST() {
                 direction: tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT',
                 category: tx.category,
                 originalCategory: tx.originalCategory || tx.category,
-                
+
                 billForecastDate: tx.creditCardMetadata?.billForecastDate ?? null,
                 purchaseDate: tx.creditCardMetadata?.purchaseDate ? new Date(tx.creditCardMetadata.purchaseDate) : null,
                 totalInstallments: tx.creditCardMetadata?.totalInstallments ?? null,
@@ -123,7 +123,7 @@ export async function POST() {
                 direction: tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT',
                 category: tx.category,
                 originalCategory: tx.originalCategory || tx.category,
-                
+
                 billForecastDate: tx.creditCardMetadata?.billForecastDate ?? null,
                 purchaseDate: tx.creditCardMetadata?.purchaseDate ? new Date(tx.creditCardMetadata.purchaseDate) : null,
                 totalInstallments: tx.creditCardMetadata?.totalInstallments ?? null,

@@ -34,11 +34,6 @@ export async function GET(req: Request) {
         },
         classification: {
           not: 'IGNORED'
-        },
-        description: {
-          not: {
-            startsWith: 'Transferência enviada'
-          }
         }
       },
       include: { account: true }
