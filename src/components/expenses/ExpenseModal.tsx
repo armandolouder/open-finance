@@ -12,7 +12,7 @@ interface ExpenseModalProps {
 
 export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string, children?: { id: string; name: string }[] }[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
@@ -135,18 +135,36 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-1">Categoria</label>
-            <select 
-              className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 appearance-none"
-              value={formData.categoryId}
-              onChange={e => setFormData({...formData, categoryId: e.target.value})}
-            >
-              <option value="">Selecionar categoria...</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-1">Categoria</label>
+              <select 
+                className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 appearance-none"
+                value={formData.categoryId}
+                onChange={e => setFormData({...formData, categoryId: e.target.value})}
+              >
+                <option value="">Selecionar categoria...</option>
+                {categories.map(c => (
+                  <optgroup key={c.id} label={c.name}>
+                    <option value={c.id}>{c.name}</option>
+                    {c.children?.map(child => (
+                      <option key={child.id} value={child.id}>↳ {child.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-1">Conta / Cartão</label>
+              <select 
+                className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 appearance-none"
+                value={formData.accountId}
+                onChange={e => setFormData({...formData, accountId: e.target.value})}
+              >
+                <option value="">Nenhuma (Dinheiro)</option>
+                {/* Aqui podemos popular contas e cartões futuramente */}
+              </select>
+            </div>
           </div>
 
           <div>
