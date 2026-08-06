@@ -5,7 +5,7 @@ import {
   CreditCard, ChevronDown, ChevronUp, Repeat, AlertCircle,
   ChevronLeft, ChevronRight, Pencil, X, Check
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { cn, getBankLogo, getBankBranding, getBankLogoUrl, monthKey, monthLabel } from "@/lib/utils";
 
 const fmt = (v: number | undefined | null) =>
@@ -65,6 +65,7 @@ interface CardData {
 
 function CardsPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const month = searchParams.get("month") || monthKey(new Date());
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +131,7 @@ function CardsPageContent() {
               return (
               <button
                 key={card.id}
-                onClick={() => setSelectedCard(card.id)}
+                onClick={() => router.push(`/cards/${card.id}?month=${month}`)}
                 style={{
                   background: selectedCard === card.id
                     ? (brand.cardBgSelected ?? brand.cardBg ?? undefined)
@@ -271,65 +272,6 @@ function CardsPageContent() {
               </button>
             )})}
           </div>
-
-          {/* Fatura do cartão selecionado */}
-          {activeCard && (
-            <div className="space-y-3 mt-8">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
-                <span>Fatura de {monthLabel(month)} — {activeCard.name}</span>
-                {activeBill && (
-                  <span className="bg-muted px-2 py-1 rounded-md text-xs">
-                    {activeBill.transactions.length} lançamentos
-                  </span>
-                )}
-              </h2>
-
-              {!activeBill || activeBill.transactions.length === 0 ? (
-                <div className="rounded-2xl bg-card border border-border p-12 text-center text-muted-foreground">
-                  Nenhuma compra nesta fatura.
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
-                  <div className="divide-y divide-border">
-                    {activeBill.transactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
-                            {tx.totalInstallments && tx.totalInstallments > 1 ? (
-                              <Repeat className="w-4 h-4 text-destructive" />
-                            ) : (
-                              <CreditCard className="w-4 h-4 text-destructive" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground text-sm truncate leading-snug">{tx.description}</p>
-                            <p className="text-xs text-muted-foreground truncate mt-0.5">
-                              {tx.category ?? "Sem categoria"}
-                              {tx.cardNumber ? ` · Final ${tx.cardNumber}` : ""}
-                              {tx.totalInstallments && tx.totalInstallments > 1
-                                ? ` · Parcela ${tx.installmentNumber}/${tx.totalInstallments}`
-                                : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-semibold text-sm text-foreground">
-                            {fmt(Math.abs(tx.amount))}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(tx.purchaseDate ?? tx.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {cards.length === 0 && (
             <div className="rounded-2xl bg-card border border-border p-12 text-center text-muted-foreground">

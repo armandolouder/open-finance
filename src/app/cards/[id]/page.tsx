@@ -159,9 +159,18 @@ function CardDetailsPageContent() {
   }
 
   return (
-    <div className="w-full max-w-[1200px] pb-20 flex flex-col lg:flex-row gap-6">
+    <div className="w-full max-w-[1200px] pb-20 flex flex-col gap-6">
+      <div className="flex items-center">
+        <button 
+          onClick={() => router.push('/cards')} 
+          className="flex items-center gap-2 text-[14px] font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-muted/50 -ml-3"
+        >
+          <ArrowLeft className="w-4 h-4" /> Voltar para Cartões
+        </button>
+      </div>
       
-      {/* Esquerda: Informações do Cartão */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Esquerda: Informações do Cartão */}
       <div className="w-full lg:w-[340px] shrink-0 space-y-6">
         <div className="bg-[#121212] rounded-[16px] p-6 border border-white/5 shadow-2xl">
            
@@ -336,6 +345,7 @@ function CardDetailsPageContent() {
            </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
