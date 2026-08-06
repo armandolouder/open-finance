@@ -120,7 +120,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       transactions: transactions.map(t => ({ ...t, isCreditCard: t.account?.type === 'CREDIT' })),
-      projections: projections.map(p => ({ ...p, isCreditCard: p.isCreditCard ?? (p.creditCardId != null || p.account?.type === 'CREDIT') }))
+      projections: projections.map((p: any) => ({ ...p, isCreditCard: p.isCreditCard ?? (p.creditCardId != null || p.account?.type === 'CREDIT') }))
     });
   } catch (error) {
     console.error("GET /api/expenses error:", error);
