@@ -165,7 +165,7 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
                         {logoUrl ? (
                           <img src={logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
                         ) : (
-                          <div className={cn("font-bold text-sm", brand.text)}>{brand.icon}</div>
+                          <div className="font-bold text-[14px] text-white">{brand.icon}</div>
                         )}
                       </div>
                       <div className="min-w-0">

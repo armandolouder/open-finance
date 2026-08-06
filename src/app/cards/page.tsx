@@ -117,9 +117,6 @@ function CardsPageContent() {
           <h1 className="text-[24px] font-bold text-white tracking-tight leading-tight">Meus cartões</h1>
           <p className="text-[14px] text-muted-foreground mt-1">Gerencie seus cartões de crédito, limites e faturas</p>
         </div>
-        <button className="px-4 py-2 bg-white text-black font-semibold rounded-full text-[13px] hover:bg-white/90 transition-colors shrink-0">
-          + Novo cartão
-        </button>
       </div>
 
       {!loading && !error && (
@@ -152,18 +149,6 @@ function CardsPageContent() {
                 <p className="text-[16px] font-bold text-red-500">{fmt(usedLimit)}</p>
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <button className="px-3 py-1.5 rounded-full bg-white text-black text-[12px] font-medium flex items-center gap-2 shrink-0">
-              <LayoutGrid className="w-3.5 h-3.5" /> Todos <span className="bg-black/10 px-1.5 rounded text-[10px]">{cards.length}</span>
-            </button>
-            <button className="px-3 py-1.5 rounded-full bg-white/5 text-muted-foreground text-[12px] font-medium flex items-center gap-2 hover:bg-white/10 transition-colors border border-white/5 shrink-0">
-              <RefreshCw className="w-3.5 h-3.5" /> Open Finance <span className="bg-white/10 px-1.5 rounded text-[10px]">{openFinanceCount}</span>
-            </button>
-            <button className="px-3 py-1.5 rounded-full bg-white/5 text-muted-foreground text-[12px] font-medium flex items-center gap-2 hover:bg-white/10 transition-colors border border-white/5 shrink-0">
-              <Pencil className="w-3.5 h-3.5" /> Manuais <span className="bg-white/10 px-1.5 rounded text-[10px]">{manualCount}</span>
-            </button>
           </div>
         </>
       )}
@@ -209,7 +194,7 @@ function CardsPageContent() {
                       {logoUrl ? (
                         <img src={logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
                       ) : (
-                        <div className={cn("font-bold text-sm", brand.text)}>{brand.icon}</div>
+                        <div className="font-bold text-[14px] text-white">{brand.icon}</div>
                       )}
                     </div>
                     <div className="min-w-0">
