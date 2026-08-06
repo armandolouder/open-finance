@@ -4,11 +4,12 @@ import { prisma } from '@/services/db';
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { name, type, color, rules, showOnHome } = await request.json();
+    const { name, type, color, rules, showOnHome, ignoreInTotals } = await request.json();
     
     // Update basic info
     const dataToUpdate: any = { name, type, color };
     if (showOnHome !== undefined) dataToUpdate.showOnHome = showOnHome;
+    if (ignoreInTotals !== undefined) dataToUpdate.ignoreInTotals = ignoreInTotals;
 
     const category = await prisma.category.update({
       where: { id },

@@ -37,6 +37,8 @@ export async function POST(req: Request) {
         categoryId: data.categoryId || null,
         totalInstallments: data.totalInstallments ? parseInt(data.totalInstallments) : null,
         tags: data.tags ? JSON.stringify(data.tags) : null,
+        isVariable: data.isVariable ?? false,
+        matchPattern: data.matchPattern || null,
       },
       include: { category: true, account: true, creditCard: true }
     });

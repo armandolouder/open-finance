@@ -26,6 +26,8 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
     categoryId: "",
     accountOrCardId: "",
     description: "",
+    isVariable: false,
+    matchPattern: "",
   });
 
   useEffect(() => {

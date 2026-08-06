@@ -190,6 +190,7 @@ model Category {
   color     String?
   parentId  String?
   showOnHome Boolean @default(true)
+  ignoreInTotals Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -234,6 +235,8 @@ model RecurringExpense {
   status          String   @default("ACTIVE") // 'ACTIVE' | 'CANCELLED'
   totalInstallments Int?
   tags            String?  // JSON or comma separated
+  isVariable      Boolean  @default(false)
+  matchPattern    String?  // e.g., "ENEL, ELETROPAULO"
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

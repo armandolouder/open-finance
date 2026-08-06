@@ -17,6 +17,7 @@ interface Transaction {
   installmentNumber?: number;
   totalInstallments?: number;
   isCreditCard?: boolean;
+  isIgnored?: boolean;
 }
 
 function ExpensesPageContent() {
@@ -60,9 +61,12 @@ function ExpensesPageContent() {
   const bankItems = allItems.filter(t => !t.isCreditCard);
   const cardItems = allItems.filter(t => t.isCreditCard);
 
-  const totalRelatorio = allItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const totalMensal = bankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0) + realCardTotal;
-  const pending = (data.projections || []).reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const activeItems = allItems.filter(t => !t.isIgnored);
+  const activeBankItems = bankItems.filter(t => !t.isIgnored);
+
+  const totalRelatorio = activeItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const totalMensal = activeBankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0) + realCardTotal;
+  const pending = (data.projections || []).filter(t => !t.isIgnored).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
   return (
     <div className="space-y-6 max-w-5xl">

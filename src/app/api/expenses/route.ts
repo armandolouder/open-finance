@@ -14,6 +14,13 @@ export async function GET(req: Request) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
+    // Fetch ignored categories
+    const ignoredCategories = await prisma.category.findMany({
+      where: { ignoreInTotals: true },
+      select: { name: true }
+    });
+    const ignoredNames = ignoredCategories.map(c => c.name);
+
     // Get actual transactions for the month that are expenses (debits)
     const transactions = await prisma.transaction.findMany({
       where: {
@@ -52,19 +59,30 @@ export async function GET(req: Request) {
       include: { category: true, account: true, creditCard: true }
     });
 
-    // We can project recurring expenses for the current month
-    const projections = recurringExpenses.map(re => {
-      // Logic to determine if this recurrence happens in the requested month
-      // For MONTHLY, it generally does if startDate <= endDate
-      // Here we just attach a projected date for this month
+    const projections: any[] = [];
+    for (const re of recurringExpenses) {
+      let hasRealMatch = transactions.some((t: any) => t.recurringExpenseId === re.id);
+      
+      if (!hasRealMatch && re.matchPattern) {
+        hasRealMatch = transactions.some((t: any) => {
+          const desc = t.description.toLowerCase();
+          const patterns = re.matchPattern!.toLowerCase().split(',').map((p: string) => p.trim());
+          return patterns.some((p: string) => p && desc.includes(p));
+        });
+      }
+
+      if (hasRealMatch) {
+        continue;
+      }
+
       const projDate = new Date(year, month - 1, re.dayOfMonth || 1);
-      return {
+      projections.push({
         ...re,
         projectedDate: projDate,
         isProjected: true,
         title: re.title
-      };
-    });
+      });
+    }
 
     // Automatically project future installments from Pluggy API
     const pastInstallments = await prisma.transaction.findMany({
@@ -119,8 +137,16 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      transactions: transactions.map(t => ({ ...t, isCreditCard: t.account?.type === 'CREDIT' })),
-      projections: projections.map((p: any) => ({ ...p, isCreditCard: p.isCreditCard ?? (p.creditCardId != null || p.account?.type === 'CREDIT') }))
+      transactions: transactions.map(t => ({ 
+        ...t, 
+        isCreditCard: t.account?.type === 'CREDIT',
+        isIgnored: t.category ? ignoredNames.includes(t.category) : false
+      })),
+      projections: projections.map((p: any) => ({ 
+        ...p, 
+        isCreditCard: p.isCreditCard ?? (p.creditCardId != null || p.account?.type === 'CREDIT'),
+        isIgnored: p.category?.name ? ignoredNames.includes(p.category.name) : false
+      }))
     });
   } catch (error) {
     console.error("GET /api/expenses error:", error);

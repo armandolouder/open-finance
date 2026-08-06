@@ -63,6 +63,12 @@ export async function GET(request: Request) {
     let totalExpense = 0;
     let proLabore = 0;
     
+    const ignoredCategories = await prisma.category.findMany({
+      where: { ignoreInTotals: true },
+      select: { name: true }
+    });
+    const ignoredNames = ignoredCategories.map(c => c.name);
+    
     const accountsData: any[] = [];
     const allRecentTransactions: any[] = [];
     const expensesByCategoryMap: Record<string, { amount: number, sources: Set<string> }> = {};
@@ -228,9 +234,12 @@ export async function GET(request: Request) {
               proLabore += tx.amount;
             }
           } else {
-            totalExpense += Math.abs(tx.amount);
-            
             const cat = tx.category || 'Outros';
+            if (ignoredNames.includes(cat)) {
+              continue;
+            }
+
+            totalExpense += Math.abs(tx.amount);
             
             if (!expensesByCategoryMap[cat]) {
               expensesByCategoryMap[cat] = { amount: 0, sources: new Set() };

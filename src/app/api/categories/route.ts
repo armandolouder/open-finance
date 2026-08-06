@@ -22,7 +22,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, type, color, rules, parentId, showOnHome } = await request.json();
+    const { name, type, color, rules, parentId, showOnHome, ignoreInTotals } = await request.json();
     
     if (!name || !type) {
       return NextResponse.json({ error: 'Name and type are required' }, { status: 400 });
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
         color,
         parentId: parentId || null,
         showOnHome: showOnHome ?? true,
+        ignoreInTotals: ignoreInTotals ?? false,
         rules: {
           create: (rules || []).map((pattern: string) => ({ pattern }))
         }

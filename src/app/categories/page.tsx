@@ -19,6 +19,7 @@ export default function CategoriesPage() {
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
   const [editType, setEditType] = useState("");
+  const [editIgnore, setEditIgnore] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -95,6 +96,7 @@ export default function CategoriesPage() {
     setEditName(cat.name);
     setEditColor(cat.color || "#64748b");
     setEditType(cat.type);
+    setEditIgnore(cat.ignoreInTotals || false);
   };
 
   const handleSaveEdit = async (cat: any) => {
@@ -102,7 +104,7 @@ export default function CategoriesPage() {
       await fetch(`/api/categories/${cat.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName, color: editColor, type: editType })
+        body: JSON.stringify({ name: editName, color: editColor, type: editType, ignoreInTotals: editIgnore })
       });
       setEditingCatId(null);
       fetchCategories();
@@ -257,31 +259,47 @@ export default function CategoriesPage() {
             
             <div className="flex justify-between items-start mb-4">
               {editingCatId === cat.id ? (
-                <div className="flex-1 flex flex-col sm:flex-row gap-2 items-end">
-                  <div className="flex-1 w-full">
-                    <input 
-                      type="text" autoFocus
-                      value={editName} onChange={(e) => setEditName(e.target.value)}
-                      className="w-full bg-background border border-border text-foreground text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 items-end">
+                    <div className="flex-1 w-full">
+                      <input 
+                        type="text" autoFocus
+                        value={editName} onChange={(e) => setEditName(e.target.value)}
+                        className="w-full bg-background border border-border text-foreground text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      />
+                    </div>
+                    <div className="w-full sm:w-28 shrink-0 flex gap-2">
+                      <input 
+                        type="color" 
+                        value={editColor} onChange={(e) => setEditColor(e.target.value)}
+                        className="w-[34px] h-[34px] p-0.5 bg-background border border-border rounded-lg cursor-pointer"
+                      />
+                      <select 
+                        value={editType} onChange={(e) => setEditType(e.target.value)}
+                        className="flex-1 bg-background border border-border text-foreground text-xs rounded-lg px-2 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      >
+                        <option value="VARIABLE">Variável</option>
+                        <option value="FIXED">Fixa</option>
+                        <option value="ESSENTIAL">Essen.</option>
+                        <option value="NON_ESSENTIAL">Supérf.</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="w-full sm:w-28 shrink-0 flex gap-2">
+                  
+                  <div className="flex items-center gap-2 pt-1">
                     <input 
-                      type="color" 
-                      value={editColor} onChange={(e) => setEditColor(e.target.value)}
-                      className="w-[34px] h-[34px] p-0.5 bg-background border border-border rounded-lg cursor-pointer"
+                      type="checkbox" 
+                      id="editIgnore"
+                      checked={editIgnore}
+                      onChange={(e) => setEditIgnore(e.target.checked)}
+                      className="w-4 h-4 rounded border-border text-emerald-500 focus:ring-emerald-500"
                     />
-                    <select 
-                      value={editType} onChange={(e) => setEditType(e.target.value)}
-                      className="flex-1 bg-background border border-border text-foreground text-xs rounded-lg px-2 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    >
-                      <option value="VARIABLE">Variável</option>
-                      <option value="FIXED">Fixa</option>
-                      <option value="ESSENTIAL">Essen.</option>
-                      <option value="NON_ESSENTIAL">Supérf.</option>
-                    </select>
+                    <label htmlFor="editIgnore" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                      Ignorar nas Somas Totais (Neutro - Ex: Pró-labore)
+                    </label>
                   </div>
-                  <div className="flex gap-1 h-[34px]">
+
+                  <div className="flex gap-2 justify-end mt-2">
                     <button onClick={() => handleSaveEdit(cat)} className="bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1 rounded-md text-xs font-medium">Salvar</button>
                     <button onClick={() => setEditingCatId(null)} className="bg-muted hover:bg-muted/80 text-foreground px-3 py-1 rounded-md text-xs font-medium">Cancelar</button>
                   </div>
