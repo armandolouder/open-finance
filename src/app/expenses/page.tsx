@@ -61,7 +61,7 @@ function ExpensesPageContent() {
   const cardItems = allItems.filter(t => t.isCreditCard);
 
   const totalRelatorio = allItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const totalMensal = bankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const totalMensal = bankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0) + realCardTotal;
   const pending = (data.projections || []).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
   return (
@@ -88,9 +88,9 @@ function ExpensesPageContent() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground mb-1">Total Mensal (Contas)</p>
+          <p className="text-sm text-muted-foreground mb-1">Total Mensal</p>
           <p className="text-2xl font-bold">R$ {totalMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-muted-foreground mt-2">{bankItems.length} despesas</p>
+          <p className="text-xs text-muted-foreground mt-2">Soma geral do mês</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-16 h-16 bg-blue-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
