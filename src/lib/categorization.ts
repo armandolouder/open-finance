@@ -1,6 +1,6 @@
 import { prisma } from '@/services/db';
 
-export async function applyCategoriesToTransactions(transactions: any[]) {
+export async function applyCategoriesToTransactions(transactions: any[], accountName?: string) {
   if (!transactions || transactions.length === 0) return transactions;
 
   // 1. Fetch all categories with rules
@@ -39,18 +39,41 @@ export async function applyCategoriesToTransactions(transactions: any[]) {
     if (tx.id && overrideMap.has(tx.id)) {
       matchedCat = overrideMap.get(tx.id);
     } else {
-      // Check rules
-      const desc = (tx.description || '').toLowerCase();
-      for (const cat of categories) {
-        for (const rule of cat.rules) {
-          const pattern = rule.pattern.toLowerCase();
-          // Exact match or includes
-          if (desc.includes(pattern)) {
+      // Regra 1: Saídas da conta PJ (Pró-labore)
+      if (accountName && accountName.toLowerCase().includes('pj') && tx.amount < 0) {
+        const proLaboreCat = categories.find(c => 
+          c.name.toLowerCase().includes('pró-labore') || 
+          c.name.toLowerCase().includes('pro-labore') || 
+          c.name.toLowerCase().includes('pro labore')
+        );
+        if (proLaboreCat) {
+          matchedCat = proLaboreCat;
+        }
+      }
+
+      // Regra 2: Verifica regras configuradas ou nome da categoria
+      if (!matchedCat) {
+        const desc = (tx.description || '').toLowerCase();
+        for (const cat of categories) {
+          let matched = false;
+          // Verifica regras
+          for (const rule of cat.rules) {
+            const pattern = rule.pattern.toLowerCase();
+            if (desc.includes(pattern)) {
+              matched = true;
+              break;
+            }
+          }
+          // Fallback: O nome da própria categoria (ex: tag "LIGHT")
+          if (!matched && desc.includes(cat.name.toLowerCase())) {
+            matched = true;
+          }
+
+          if (matched) {
             matchedCat = cat;
             break;
           }
         }
-        if (matchedCat) break;
       }
     }
 
