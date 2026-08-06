@@ -75,9 +75,13 @@ function ExpensesPageContent() {
   const activeItems = allItems.filter(t => !t.isIgnored);
   const activeBankItems = bankItems.filter(t => !t.isIgnored);
 
-  const totalRelatorio = allItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const totalMensal = activeBankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0) + realCardTotal;
-  const pending = (data.projections || []).filter(t => !t.isIgnored).reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  // "somente os cadastros manuais"
+  const manualItems = allItems.filter(t => t.isProjected && t.id && !t.id.toString().startsWith('proj_'));
+  const totalRecorrentes = manualItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  
+  // "card cartoes + card recorrentes = total mensal"
+  const totalMensal = realCardTotal + totalRecorrentes;
+  const pending = manualItems.filter(t => !t.isIgnored).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -117,10 +121,10 @@ function ExpensesPageContent() {
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-16 h-16 bg-amber-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
-          <p className="text-sm text-muted-foreground mb-1">Recorrentes (Relatório)</p>
-          <p className="text-2xl font-bold">R$ {totalRelatorio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-sm text-muted-foreground mb-1">Recorrentes (Manuais)</p>
+          <p className="text-2xl font-bold">R$ {totalRecorrentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Clock className="w-3 h-3 text-amber-500" /> {allItems.length} listadas abaixo
+            <Clock className="w-3 h-3 text-amber-500" /> {manualItems.length} cadastradas
           </p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
