@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   CreditCard, ChevronDown, ChevronUp, Repeat, AlertCircle,
-  ChevronLeft, ChevronRight, Pencil, X, Check
+  ChevronLeft, ChevronRight, Pencil, X, Check, LayoutGrid, MoreVertical, Link2, Calendar
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { cn, getBankLogo, getBankBranding, getBankLogoUrl, monthKey, monthLabel } from "@/lib/utils";
@@ -104,15 +104,73 @@ function CardsPageContent() {
   // Como agora filtramos na API para retornar apenas 1 fatura (do mês selecionado), pegamos a primeira:
   const activeBill = activeCard?.bills?.[0];
 
+  const totalLimit = cards.reduce((acc, c) => acc + (c.creditLimit ?? c.creditData?.creditLimit ?? 0), 0);
+  const availableLimit = cards.reduce((acc, c) => acc + (c.availableLimit ?? c.creditData?.availableCreditLimit ?? 0), 0);
+  const usedLimit = totalLimit > 0 ? (totalLimit - availableLimit) : 0;
+  const openFinanceCount = cards.filter(c => !!c.institutionName).length;
+  const manualCount = cards.length - openFinanceCount;
+
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Cartões de Crédito</h1>
+    <div className="space-y-8 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[24px] font-bold text-white tracking-tight leading-tight">Meus cartões</h1>
+          <p className="text-[14px] text-muted-foreground mt-1">Gerencie seus cartões de crédito, limites e faturas</p>
+        </div>
+        <button className="px-4 py-2 bg-white text-black font-semibold rounded-full text-[13px] hover:bg-white/90 transition-colors shrink-0">
+          + Novo cartão
+        </button>
       </div>
 
+      {!loading && !error && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-[#121212] rounded-[16px] border border-white/5 p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-[#1e293b] flex items-center justify-center shrink-0">
+                <CreditCard className="w-5 h-5 text-[#38bdf8]" />
+              </div>
+              <div>
+                <p className="text-[12px] text-muted-foreground font-medium">Limite total</p>
+                <p className="text-[16px] font-bold text-white">{fmt(totalLimit)}</p>
+              </div>
+            </div>
+            <div className="bg-[#121212] rounded-[16px] border border-white/5 p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <Link2 className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-[12px] text-muted-foreground font-medium">Disponível</p>
+                <p className="text-[16px] font-bold text-white">{fmt(availableLimit)}</p>
+              </div>
+            </div>
+            <div className="bg-[#121212] rounded-[16px] border border-white/5 p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                <Pencil className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-[12px] text-muted-foreground font-medium">Em uso</p>
+                <p className="text-[16px] font-bold text-red-500">{fmt(usedLimit)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button className="px-3 py-1.5 rounded-full bg-white text-black text-[12px] font-medium flex items-center gap-2 shrink-0">
+              <LayoutGrid className="w-3.5 h-3.5" /> Todos <span className="bg-black/10 px-1.5 rounded text-[10px]">{cards.length}</span>
+            </button>
+            <button className="px-3 py-1.5 rounded-full bg-white/5 text-muted-foreground text-[12px] font-medium flex items-center gap-2 hover:bg-white/10 transition-colors border border-white/5 shrink-0">
+              <RefreshCw className="w-3.5 h-3.5" /> Open Finance <span className="bg-white/10 px-1.5 rounded text-[10px]">{openFinanceCount}</span>
+            </button>
+            <button className="px-3 py-1.5 rounded-full bg-white/5 text-muted-foreground text-[12px] font-medium flex items-center gap-2 hover:bg-white/10 transition-colors border border-white/5 shrink-0">
+              <Pencil className="w-3.5 h-3.5" /> Manuais <span className="bg-white/10 px-1.5 rounded text-[10px]">{manualCount}</span>
+            </button>
+          </div>
+        </>
+      )}
+
       {loading && (
-        <div className="space-y-3">
-          {[1, 2].map((i) => <div key={i} className="h-36 rounded-2xl bg-muted animate-pulse" />)}
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4 mt-6">
+          {[1, 2, 3].map((i) => <div key={i} className="h-56 rounded-[16px] bg-[#121212] border border-white/5 animate-pulse" />)}
         </div>
       )}
 
@@ -121,39 +179,33 @@ function CardsPageContent() {
       )}
 
       {!loading && !error && (
-        <>
-          {/* Seletor de cartões */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {cards.map((card) => {
-              const brand = getBankBranding(card.name, card.institutionName);
-              const logoUrl = getBankLogoUrl(card.name, card.institutionName, card.institutionLogo);
-              
-              return (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4">
+          {cards.map((card) => {
+            const brand = getBankBranding(card.name, card.institutionName);
+            const logoUrl = getBankLogoUrl(card.name, card.institutionName, card.institutionLogo);
+            
+            const day = card.dueDate ? card.dueDate.split('-')[2] : '01';
+            const [y, m] = month.split('-');
+            let closingDateDisplay = '';
+            if (card.closingDate) {
+              const cDay = card.closingDate.split('-')[2];
+              closingDateDisplay = `${cDay} de ${monthLabel(month).split(' de')[0]}`;
+            } else {
+              const d = new Date(parseInt(y), parseInt(m) - 1, parseInt(day));
+              d.setDate(d.getDate() - 9);
+              closingDateDisplay = d.toLocaleDateString("pt-BR", { day: 'numeric', month: 'long' });
+            }
+
+            return (
               <button
                 key={card.id}
                 onClick={() => router.push(`/cards/${card.id}?month=${month}`)}
-                style={{
-                  background: selectedCard === card.id
-                    ? (brand.cardBgSelected ?? brand.cardBg ?? undefined)
-                    : (brand.cardBg ?? undefined),
-                }}
-                className={cn(
-                  "relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-300 border shadow-sm w-full",
-                  brand.border,
-                  selectedCard === card.id
-                    ? "shadow-lg ring-1 ring-white/10"
-                    : "hover:border-white/20 hover:shadow-md"
-                )}
+                className="bg-[#121212] rounded-[16px] border border-white/5 p-5 text-left hover:border-white/20 transition-colors w-full block group"
               >
-                {/* Orbe de brilho sutil */}
-                <div
-                  className="absolute -top-6 -right-6 w-24 h-24 rounded-full pointer-events-none"
-                  style={{ background: `radial-gradient(circle, ${brand.accent ?? 'transparent'} 0%, transparent 70%)` }}
-                />
-                {/* Header: logo + nome + nível */}
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                {/* Header do Cartão */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/5", brand.bg)}>
                       {logoUrl ? (
                         <img src={logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
                       ) : (
@@ -161,123 +213,6 @@ function CardsPageContent() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-foreground text-sm truncate leading-tight">{card.name}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{card.brand ?? card.institutionName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {card.level && (
-                      <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/5">
-                        {card.level}
-                      </span>
-                    )}
-                    <div
-                      role="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingCard(card);
-                        const dDay = card.dueDate ? parseInt(card.dueDate.split('-')[2]) : '';
-                        const cDay = card.closingDate ? parseInt(card.closingDate.split('-')[2]) : '';
-                        setDueDayInput(dDay.toString());
-                        setClosingDayInput(cDay.toString());
-                        setWaiverTargetInput(card.waiverTarget ? card.waiverTarget.toString() : "");
-                        setFeeAmountInput(card.feeAmount ? card.feeAmount.toString() : "");
-                      }}
-                      className="p-1.5 bg-muted text-muted-foreground hover:text-foreground rounded-md transition-opacity cursor-pointer"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Valores */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Total Fatura ({monthShort(month)})</p>
-                    <p className="text-xl font-bold text-amber-500">{fmt(card.bills[0]?.total ?? 0)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Limite disponível</p>
-                    <p className="text-xl font-bold text-emerald-500">{fmt(card.availableLimit)}</p>
-                  </div>
-                </div>
-
-                {card.waiverTarget ? (() => {
-                  const currentTotal = card.bills[0]?.total ?? 0;
-                  const isExempt = currentTotal >= card.waiverTarget;
-                  const feeCharged = card.feeAmount ? card.bills[0]?.transactions.some(t => Math.abs(t.amount) === card.feeAmount) : false;
-
-                  return (
-                    <div className="mt-4 space-y-1.5">
-                      <div className="flex justify-between items-end">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta de Isenção</p>
-                        <p className="text-[10px] font-medium text-foreground">{fmt(currentTotal)} / {fmt(card.waiverTarget)}</p>
-                      </div>
-                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div 
-                          className={cn("h-full transition-all duration-500", isExempt ? "bg-emerald-500" : "bg-gradient-to-r from-amber-500 to-amber-300")} 
-                          style={{ width: `${Math.min(100, (currentTotal / card.waiverTarget) * 100)}%` }}
-                        />
-                      </div>
-                      
-                      {/* Inteligência de Anuidade */}
-                      {card.feeAmount && (
-                        <div className="pt-1">
-                          {feeCharged ? (
-                            <p className="text-[10px] text-destructive flex items-center gap-1 font-medium bg-destructive/10 px-2 py-1 rounded w-max">
-                              <AlertCircle className="w-3 h-3" /> Anuidade de {fmt(card.feeAmount)} cobrada nesta fatura.
-                            </p>
-                          ) : isExempt ? (
-                            <p className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium bg-emerald-400/10 px-2 py-1 rounded w-max">
-                              <AlertCircle className="w-3 h-3" /> Meta batida! Economia de {fmt(card.feeAmount)}.
-                            </p>
-                          ) : (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
-                              Anuidade padrão: {fmt(card.feeAmount)}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })() : null}
-
-                {/* Datas */}
-                {card.dueDate && (() => {
-                  const day = card.dueDate.split('-')[2];
-                  const [y, m] = month.split('-');
-                  const projectedDueDate = `${y}-${m}-${day}`;
-                  
-                  let closingDateDisplay = '';
-                  if (card.closingDate) {
-                    const cDay = card.closingDate.split('-')[2];
-                    closingDateDisplay = `${cDay}/${m}/${y}`;
-                  } else {
-                    const d = new Date(parseInt(y), parseInt(m) - 1, parseInt(day));
-                    d.setDate(d.getDate() - 9);
-                    closingDateDisplay = d.toLocaleDateString("pt-BR");
-                  }
-
-                  return (
-                    <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground">
-                      <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
-                      <span>Fecha: {closingDateDisplay}</span>
-                      <span className="opacity-40">|</span>
-                      <span>Vence: {fmtDate(projectedDueDate)}</span>
-                      <span className="opacity-40">|</span>
-                      <span>Mín: {fmt(card.minimumPayment)}</span>
-                    </div>
-                  );
-                })()}
-              </button>
-            )})}
-          </div>
-
-          {cards.length === 0 && (
-            <div className="rounded-2xl bg-card border border-border p-12 text-center text-muted-foreground">
-              Nenhum cartão de crédito encontrado.
-            </div>
-          )}
         </>
       )}
 

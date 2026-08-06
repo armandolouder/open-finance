@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  CreditCard, ChevronLeft, ChevronRight, Pencil, X, AlertCircle, Repeat
+  CreditCard, ChevronLeft, ChevronRight, Pencil, X, AlertCircle, Repeat, MoreVertical, RefreshCw, Calendar
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
+import { cn, getBankBranding, getBankLogoUrl, monthLabel } from "@/lib/utils";
 
 const fmt = (v: number | undefined | null) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -140,49 +140,51 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
               const brand = getBankBranding(card.name, card.institutionName);
               const logoUrl = getBankLogoUrl(card.name, card.institutionName, card.institutionLogo);
               
+              const day = card.dueDate ? card.dueDate.split('-')[2] : '01';
+              const [y, m] = month.split('-');
+              let closingDateDisplay = '';
+              if (card.closingDate) {
+                const cDay = card.closingDate.split('-')[2];
+                closingDateDisplay = `${cDay} de ${monthLabel(month).split(' de')[0]}`;
+              } else {
+                const d = new Date(parseInt(y), parseInt(m) - 1, parseInt(day));
+                d.setDate(d.getDate() - 9);
+                closingDateDisplay = d.toLocaleDateString("pt-BR", { day: 'numeric', month: 'long' });
+              }
+
               return (
-              <button
-                key={card.id}
-                onClick={() => router.push(`/cards/${card.id}?month=${month}`)}
-                style={{
-                  background: selectedCard === card.id
-                    ? (brand.cardBgSelected ?? brand.cardBg ?? undefined)
-                    : (brand.cardBg ?? undefined),
-                }}
-                className={cn(
-                  "relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-300 border shadow-sm w-full",
-                  brand.border,
-                  selectedCard === card.id
-                    ? "shadow-lg ring-1 ring-white/10"
-                    : "hover:border-white/20 hover:shadow-md"
-                )}
-              >
-                {/* Orbe de brilho sutil */}
-                <div
-                  className="absolute -top-6 -right-6 w-24 h-24 rounded-full pointer-events-none"
-                  style={{ background: `radial-gradient(circle, ${brand.accent ?? 'transparent'} 0%, transparent 70%)` }}
-                />
-                {/* Header: logo + nome + nível */}
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
-                      {logoUrl ? (
-                        <img src={logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-                      ) : (
-                        <div className={cn("font-bold text-sm", brand.text)}>{brand.icon}</div>
-                      )}
+                <button
+                  key={card.id}
+                  onClick={() => router.push(`/cards/${card.id}?month=${month}`)}
+                  className="bg-[#121212] rounded-[16px] border border-white/5 p-5 text-left hover:border-white/20 transition-colors w-full block group"
+                >
+                  {/* Header do Cartão */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/5", brand.bg)}>
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+                        ) : (
+                          <div className={cn("font-bold text-sm", brand.text)}>{brand.icon}</div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-[13px] font-bold text-white uppercase tracking-wide leading-tight truncate">{card.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {card.institutionName ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 text-[#38bdf8]" />
+                              <span className="text-[11px] text-[#38bdf8] font-medium">Open Finance</span>
+                            </>
+                          ) : (
+                            <>
+                              <Pencil className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-[11px] text-muted-foreground font-medium">Manual</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-foreground text-sm truncate leading-tight">{card.name}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{card.brand ?? card.institutionName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {card.level && (
-                      <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/5">
-                        {card.level}
-                      </span>
-                    )}
                     <div
                       role="button"
                       onClick={(e) => {
@@ -195,94 +197,44 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
                         setWaiverTargetInput(card.waiverTarget ? card.waiverTarget.toString() : "");
                         setFeeAmountInput(card.feeAmount ? card.feeAmount.toString() : "");
                       }}
-                      className="p-1.5 bg-muted text-muted-foreground hover:text-foreground rounded-md transition-opacity cursor-pointer"
+                      className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-colors"
                     >
-                      <Pencil className="w-3 h-3" />
+                      <MoreVertical className="w-4 h-4" />
                     </div>
                   </div>
-                </div>
 
-                {/* Valores */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Total Fatura ({monthShort(month)})</p>
-                    <p className="text-xl font-bold text-amber-500">{fmt(card.bills[0]?.total ?? 0)}</p>
+                  {/* Resumo da Fatura */}
+                  <div className="flex items-center justify-between py-4 border-b border-white/5">
+                    <span className="text-[13px] text-muted-foreground">Fatura de {monthLabel(month).split(' de')[0]}</span>
+                    <span className="text-[15px] font-bold text-white">{fmt(card.bills[0]?.total ?? 0)}</span>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Limite disponível</p>
-                    <p className="text-xl font-bold text-emerald-500">{fmt(card.availableLimit)}</p>
+
+                  {/* Aviso */}
+                  <div className="py-3 border-b border-white/5 flex gap-2 items-start">
+                    <AlertCircle className="w-4 h-4 text-muted-foreground opacity-50 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-muted-foreground leading-snug">Fatura ainda não fechada — os valores podem estar incompletos.</p>
                   </div>
-                </div>
 
-                {card.waiverTarget ? (() => {
-                  const currentTotal = card.bills[0]?.total ?? 0;
-                  const isExempt = currentTotal >= card.waiverTarget;
-                  const feeCharged = card.feeAmount ? card.bills[0]?.transactions.some(t => Math.abs(t.amount) === card.feeAmount) : false;
-
-                  return (
-                    <div className="mt-4 space-y-1.5">
-                      <div className="flex justify-between items-end">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta de Isenção</p>
-                        <p className="text-[10px] font-medium text-foreground">{fmt(currentTotal)} / {fmt(card.waiverTarget)}</p>
+                  {/* Limite e Status */}
+                  <div className="pt-4 pb-1 space-y-3">
+                    <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                      <CreditCard className="w-4 h-4 opacity-50" />
+                      <span>Limite disponível <span className="text-white font-semibold ml-1">{card.availableLimit ? fmt(card.availableLimit) : 'UNLIMITED'}</span></span>
+                    </div>
+                    <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 opacity-50" />
+                        <span>Fecha em {closingDateDisplay}</span>
                       </div>
-                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div 
-                          className={cn("h-full transition-all duration-500", isExempt ? "bg-emerald-500" : "bg-gradient-to-r from-amber-500 to-amber-300")} 
-                          style={{ width: `${Math.min(100, (currentTotal / card.waiverTarget) * 100)}%` }}
-                        />
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8]" />
+                        <span className="text-[#38bdf8] font-medium">Em aberto</span>
                       </div>
-                      
-                      {/* Inteligência de Anuidade */}
-                      {card.feeAmount && (
-                        <div className="pt-1">
-                          {feeCharged ? (
-                            <p className="text-[10px] text-destructive flex items-center gap-1 font-medium bg-destructive/10 px-2 py-1 rounded w-max">
-                              <AlertCircle className="w-3 h-3" /> Anuidade de {fmt(card.feeAmount)} cobrada nesta fatura.
-                            </p>
-                          ) : isExempt ? (
-                            <p className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium bg-emerald-400/10 px-2 py-1 rounded w-max">
-                              <AlertCircle className="w-3 h-3" /> Meta batida! Economia de {fmt(card.feeAmount)}.
-                            </p>
-                          ) : (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
-                              Anuidade padrão: {fmt(card.feeAmount)}
-                            </p>
-                          )}
-                        </div>
-                      )}
                     </div>
-                  );
-                })() : null}
-
-                {/* Datas */}
-                {card.dueDate && (() => {
-                  const day = card.dueDate.split('-')[2];
-                  const [y, m] = month.split('-');
-                  const projectedDueDate = `${y}-${m}-${day}`;
-                  
-                  let closingDateDisplay = '';
-                  if (card.closingDate) {
-                    const cDay = card.closingDate.split('-')[2];
-                    closingDateDisplay = `${cDay}/${m}/${y}`;
-                  } else {
-                    const d = new Date(parseInt(y), parseInt(m) - 1, parseInt(day));
-                    d.setDate(d.getDate() - 9);
-                    closingDateDisplay = d.toLocaleDateString("pt-BR");
-                  }
-
-                  return (
-                    <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground">
-                      <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
-                      <span>Fecha: {closingDateDisplay}</span>
-                      <span className="opacity-40">|</span>
-                      <span>Vence: {fmtDate(projectedDueDate)}</span>
-                      <span className="opacity-40">|</span>
-                      <span>Mín: {fmt(card.minimumPayment)}</span>
-                    </div>
-                  );
-                })()}
-              </button>
-            )})}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
