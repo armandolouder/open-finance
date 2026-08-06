@@ -192,7 +192,7 @@ function CardsPageContent() {
                   <div className="flex items-center gap-3">
                     <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/5", brand.bg)}>
                       {logoUrl ? (
-                        <img src={logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+                        <img src={logoUrl} alt="" className={cn("w-5 h-5 object-contain", logoUrl.includes('206.svg') || logoUrl.includes('mercadopago') ? "mix-blend-screen" : "brightness-0 invert opacity-90")} onError={(e) => e.currentTarget.style.display = 'none'} />
                       ) : (
                         <div className="font-bold text-[14px] text-white">{brand.icon}</div>
                       )}
@@ -233,15 +233,55 @@ function CardsPageContent() {
                 </div>
 
                 {/* Resumo da Fatura */}
-                <div className="flex items-center justify-between py-4 border-b border-white/5">
+                <div className="flex items-center justify-between pt-4 pb-3 border-b border-white/5">
                   <span className="text-[13px] text-muted-foreground">Fatura de {monthLabel(month).split(' de')[0]}</span>
                   <span className="text-[15px] font-bold text-white">{fmt(card.bills[0]?.total ?? 0)}</span>
                 </div>
 
-                {/* Aviso */}
-                <div className="py-3 border-b border-white/5 flex gap-2 items-start">
-                  <AlertCircle className="w-4 h-4 text-muted-foreground opacity-50 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-muted-foreground leading-snug">Fatura ainda não fechada — os valores podem estar incompletos.</p>
+                {/* Meta de Isenção ou Aviso */}
+                <div className="py-3 border-b border-white/5">
+                  {card.waiverTarget ? (() => {
+                    const currentTotal = card.bills[0]?.total ?? 0;
+                    const isExempt = currentTotal >= card.waiverTarget;
+                    const feeCharged = card.feeAmount ? card.bills[0]?.transactions.some(t => Math.abs(t.amount) === card.feeAmount) : false;
+                    
+                    return (
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-end">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta de Isenção</p>
+                          <p className="text-[10px] font-medium text-white">{fmt(currentTotal)} / <span className="text-muted-foreground">{fmt(card.waiverTarget)}</span></p>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <div 
+                            className={cn("h-full transition-all duration-500", isExempt ? "bg-emerald-500" : "bg-gradient-to-r from-amber-500 to-amber-300")} 
+                            style={{ width: `${Math.min(100, (currentTotal / card.waiverTarget) * 100)}%` }}
+                          />
+                        </div>
+                        {card.feeAmount && (
+                          <div className="pt-1">
+                            {feeCharged ? (
+                              <p className="text-[10px] text-destructive flex items-center gap-1 font-medium bg-destructive/10 px-2 py-1 rounded w-max">
+                                <AlertCircle className="w-3 h-3" /> Anuidade de {fmt(card.feeAmount)} cobrada nesta fatura.
+                              </p>
+                            ) : isExempt ? (
+                              <p className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium bg-emerald-400/10 px-2 py-1 rounded w-max">
+                                <AlertCircle className="w-3 h-3" /> Meta batida! Economia de {fmt(card.feeAmount)}.
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
+                                Anuidade padrão: {fmt(card.feeAmount)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })() : (
+                    <div className="flex gap-2 items-start">
+                      <AlertCircle className="w-4 h-4 text-muted-foreground opacity-50 shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-muted-foreground leading-snug">Fatura ainda não fechada — os valores podem estar incompletos.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Limite e Status */}
