@@ -184,6 +184,7 @@ export async function GET(request: NextRequest) {
             totalInstallments: tx.totalInstallments,
             installmentNumber: tx.installmentNumber,
             type: tx.direction,
+            isManual: tx.isManual,
           })),
       }];
 

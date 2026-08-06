@@ -62,7 +62,36 @@ export async function syncItemData(itemId: string) {
         // Pluggy v2 API mapping
         // date no v2 geralmente é datetime ou date
         const txDate = tx.date ? new Date(tx.date) : new Date();
+        const txAmount = tx.amount;
         
+        // Verifica se já existe uma transação manual (importada via CSV) com o mesmo valor (tolerância de R$ 0.02)
+        // e data próxima (tolerância de 3 dias) que ainda não foi vinculada à Pluggy.
+        // Se encontrar, atualiza a transação manual com o ID da Pluggy em vez de criar duplicata.
+        const existingManualMatch = await prisma.transaction.findFirst({
+          where: {
+            accountId: account.id,
+            isManual: true,
+            externalId: { startsWith: 'csv_' },
+            amount: { gte: txAmount - 0.02, lte: txAmount + 0.02 },
+            date: {
+              gte: new Date(txDate.getTime() - 3 * 24 * 60 * 60 * 1000),
+              lte: new Date(txDate.getTime() + 3 * 24 * 60 * 60 * 1000)
+            }
+          }
+        });
+
+        if (existingManualMatch) {
+          // Atualiza a transação manual para usar o externalId da Pluggy.
+          // Com isso, o upsert logo abaixo apenas atualizará esse registro, sem duplicar.
+          await prisma.transaction.update({
+            where: { id: existingManualMatch.id },
+            data: {
+              externalId: tx.id,
+              // Mantém isManual como true para o usuário saber que foi recuperada do CSV originalmente
+            }
+          });
+        }
+
         await prisma.transaction.upsert({
           where: { externalId: tx.id },
           update: {

@@ -51,6 +51,7 @@ interface CardData {
       installmentNumber?: number;
       category?: string;
       categoryColor?: string;
+      isManual?: boolean;
     }[];
   }[];
 }
@@ -234,6 +235,14 @@ function CardDetailsPageContent() {
                 <div>
                   <h2 className="text-xl font-bold text-foreground tracking-tight">Lançamentos</h2>
                   <p className="text-sm text-muted-foreground mt-1">{transactions.length} compras na fatura</p>
+                  {transactions.filter(t => t.isManual).length > 0 && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-medium">
+                      <span className="text-emerald-500">✓</span> {transactions.filter(t => t.isManual).length} lançamentos recuperados via CSV
+                      <span className="opacity-60 ml-1">
+                        (R$ {transactions.filter(t => t.isManual).reduce((s, t) => s + Math.abs(t.amount), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <CsvImportButton
@@ -279,6 +288,12 @@ function CardDetailsPageContent() {
                           >
                             {tx.category ?? "Outros"}
                           </span>
+                          <div className="flex items-center gap-1 ml-1 text-[10px] uppercase tracking-wider font-medium text-muted-foreground bg-white/5 border border-white/5 px-2 py-0.5 rounded-md">
+                            <span>Origem:</span>
+                            <span className={tx.isManual ? "text-emerald-400" : "text-foreground"}>
+                              {tx.isManual ? "CSV Nubank" : "Pluggy"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
