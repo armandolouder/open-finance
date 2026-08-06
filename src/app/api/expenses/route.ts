@@ -76,9 +76,12 @@ export async function GET(req: Request) {
       }
     });
 
+    const normalizeDesc = (desc: string) => desc.replace(/\s*\d+\/\d+\s*$/, '').trim().toLowerCase();
+    const getCleanTitle = (desc: string) => desc.replace(/\s*\d+\/\d+\s*$/, '').trim();
+
     const latestInstallments = new Map<string, any>();
     for (const t of pastInstallments) {
-      const key = `${t.description.trim().toLowerCase()}-${t.totalInstallments}`;
+      const key = `${normalizeDesc(t.description)}-${t.totalInstallments}`;
       const existing = latestInstallments.get(key);
       if (!existing || t.date > existing.date) {
         latestInstallments.set(key, t);
@@ -87,7 +90,7 @@ export async function GET(req: Request) {
 
     for (const t of latestInstallments.values()) {
       const existsInCurrentMonth = transactions.some(
-        curr => curr.description.trim().toLowerCase() === t.description.trim().toLowerCase() && curr.totalInstallments === t.totalInstallments
+        curr => normalizeDesc(curr.description) === normalizeDesc(t.description) && curr.totalInstallments === t.totalInstallments
       );
 
       if (!existsInCurrentMonth) {
@@ -104,7 +107,7 @@ export async function GET(req: Request) {
               installmentNumber: projectedInstallmentNumber,
               projectedDate: projDate,
               isProjected: true,
-              title: t.description
+              title: getCleanTitle(t.description)
             } as any);
           }
         }

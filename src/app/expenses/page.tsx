@@ -162,7 +162,7 @@ function ExpensesPageContent() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground truncate flex items-center gap-2">
-                    {(t as any).title || t.description}
+                    {((t as any).title || t.description).replace(/\s*\d+\/\d+\s*$/, '').trim()}
                     {t.installmentNumber && t.totalInstallments && (
                       <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-semibold">
                         {t.installmentNumber}/{t.totalInstallments}
