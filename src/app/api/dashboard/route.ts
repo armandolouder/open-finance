@@ -140,29 +140,80 @@ export async function GET(request: Request) {
            if (closingDayNum <= 0) closingDayNum += 30;
         }
 
-        for (const tx of transactions) {
-          let txMonth = tx.date.toISOString().slice(0, 7);
-          
-          if (account.type === 'CREDIT') {
-            const txDate = tx.date;
-            const txYear = txDate.getFullYear();
-            const txMonthNum = txDate.getMonth();
-            const txDay = txDate.getDate();
+        const getTxBillMonth = (tx: any): string => {
+          if (account.type !== 'CREDIT') {
+            return tx.date.toISOString().slice(0, 7);
+          }
+          const txDate = tx.date;
+          const txYear = txDate.getFullYear();
+          const txMonthNum = txDate.getMonth();
+          const txDay = txDate.getDate();
 
-            if (tx.billForecastDate && !account.name.toLowerCase().includes('santander')) {
-              txMonth = tx.billForecastDate.slice(0, 7);
+          const currentClosingDay = closingDayNum || 25; 
+          
+          if (txDay > currentClosingDay) {
+            const nextMonth = new Date(txYear, txMonthNum + 1, 1);
+            return `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+          }
+          return `${txYear}-${String(txMonthNum + 1).padStart(2, '0')}`;
+        }
+
+        const monthTxns = transactions.filter(tx => {
+          const m = getTxBillMonth(tx);
+          return m === currentMonthStr;
+        });
+
+        // Deduplicate transactions (e.g. Pluggy bug returning duplicate payments)
+        const uniqueTxns: any[] = [];
+        const seen = new Set();
+        for (const tx of monthTxns) {
+          const dayKey = tx.date.toISOString().slice(0, 10);
+          const key = `${dayKey}_${tx.amount}_${(tx.description || '').trim()}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueTxns.push(tx);
+          }
+        }
+
+        // Apply smart installment projection only for credit cards to match cards logic
+        if (account.type === 'CREDIT') {
+          const instGroups = new Map<string, any>();
+          for (const tx of transactions) {
+            if (!tx.installmentNumber || !tx.totalInstallments || tx.totalInstallments <= 1) continue;
+            const roundedAmount = Math.round(tx.amount);
+            let key = '';
+            if (tx.purchaseDate) {
+              const pDate = typeof tx.purchaseDate === 'string' ? tx.purchaseDate : tx.purchaseDate.toISOString();
+              key = `${pDate.slice(0, 10)}_${roundedAmount}_${tx.totalInstallments}`;
             } else {
-              const currentClosingDay = closingDayNum || 25;
-              if (txDay > currentClosingDay) {
-                const nextMonth = new Date(txYear, txMonthNum + 1, 1);
-                txMonth = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
-              } else {
-                txMonth = `${txYear}-${String(txMonthNum + 1).padStart(2, '0')}`;
-              }
+              const cleanDesc = tx.description.replace(/\s*(?:-\s*)?(?:PARC\.?\s*)?\(?\d{1,2}\/\d{1,2}\)?$/i, '').trim();
+              key = `${cleanDesc}_${roundedAmount}_${tx.totalInstallments}`;
+            }
+            if (!instGroups.has(key) || tx.installmentNumber > instGroups.get(key).installmentNumber) {
+              instGroups.set(key, { ...tx, billMonthStr: getTxBillMonth(tx) });
             }
           }
 
-          if (txMonth !== currentMonthStr) continue;
+          const [paramYear, paramMonth] = currentMonthStr.split('-').map(Number);
+          for (const [key, highest] of instGroups.entries()) {
+            const [hYear, hMonth] = highest.billMonthStr.split('-').map(Number);
+            const diff = (paramYear - hYear) * 12 + (paramMonth - hMonth);
+            if (diff > 0) {
+              const projectedInst = highest.installmentNumber + diff;
+              if (projectedInst <= highest.totalInstallments) {
+                uniqueTxns.push({
+                   ...highest,
+                   id: `proj_${highest.id}_${projectedInst}`,
+                   externalId: `proj_${highest.externalId}_${projectedInst}`,
+                   installmentNumber: projectedInst,
+                   isProjected: true
+                });
+              }
+            }
+          }
+        }
+
+        for (const tx of uniqueTxns) {
 
           const desc = (tx.description || '').toLowerCase();
           
