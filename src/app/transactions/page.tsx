@@ -96,7 +96,7 @@ function TransactionsPageContent() {
   );
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <div className="space-y-5">
       {/* Cabeçalho */}
       <div>
         <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Transações</h1>

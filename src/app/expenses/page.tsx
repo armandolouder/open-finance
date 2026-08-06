@@ -84,7 +84,7 @@ function ExpensesPageContent() {
   const pending = manualItems.filter(t => !t.isIgnored).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

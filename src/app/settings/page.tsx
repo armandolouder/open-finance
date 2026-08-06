@@ -92,7 +92,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl pb-10">
+    <div className="space-y-8 pb-10">
       <div>
         <h1 className="text-3xl font-bold text-foreground tracking-tight mb-2">Configurações</h1>
         <p className="text-muted-foreground">Gerencie as credenciais da sua aplicação e integrações.</p>

@@ -60,7 +60,7 @@ export default function SyncPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl pb-10">
+    <div className="space-y-6 pb-10">
       <h1 className="text-2xl font-bold text-foreground">Sincronização e Conexões</h1>
       
       <div className="bg-card border border-border rounded-xl p-8">

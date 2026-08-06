@@ -42,7 +42,7 @@ export default function Dashboard() {
 
   const result = (data?.totalIncome || 0) - (data?.totalExpense || 0);
   return (
-    <div className="space-y-8 pb-10 max-w-7xl">
+    <div className="space-y-8 pb-10">
 
       {loading ? (
         <div className="h-64 bg-card border border-border rounded-xl animate-pulse"></div>

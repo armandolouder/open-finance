@@ -260,7 +260,7 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8">
       {editingAccount && (
         <EditModal
           account={editingAccount}

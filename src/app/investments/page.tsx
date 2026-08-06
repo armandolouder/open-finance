@@ -93,7 +93,7 @@ export default function InvestmentsPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Investimentos</h1>
         <p className="text-muted-foreground">Carteira de investimentos consolidada por banco.</p>
