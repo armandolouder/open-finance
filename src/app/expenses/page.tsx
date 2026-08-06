@@ -14,6 +14,8 @@ interface Transaction {
   amount: number;
   date: string;
   isProjected?: boolean;
+  installmentNumber?: number;
+  totalInstallments?: number;
 }
 
 function ExpensesPageContent() {
