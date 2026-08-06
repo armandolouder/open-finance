@@ -73,33 +73,6 @@ function ExpensesPageContent() {
         </button>
       </div>
 
-      {/* Month Selector */}
-      <div className="flex items-center gap-4 bg-card/50 w-fit p-1 rounded-xl border border-border">
-        <button
-          onClick={() => {
-            const d = new Date(month + "-01T12:00:00Z");
-            d.setMonth(d.getMonth() - 1);
-            router.push(`/expenses?month=${monthKey(d)}`);
-          }}
-          className="p-2 hover:bg-accent rounded-lg text-muted-foreground"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <div className="font-semibold text-sm min-w-[120px] text-center capitalize">
-          {monthLabel(month)}
-        </div>
-        <button
-          onClick={() => {
-            const d = new Date(month + "-01T12:00:00Z");
-            d.setMonth(d.getMonth() + 1);
-            router.push(`/expenses?month=${monthKey(d)}`);
-          }}
-          className="p-2 hover:bg-accent rounded-lg text-muted-foreground"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
@@ -132,11 +105,6 @@ function ExpensesPageContent() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-border">
-        <button className="px-4 py-2 border-b-2 border-primary text-foreground font-medium">Despesas</button>
-        <button className="px-4 py-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground">Categorias</button>
-      </div>
 
       {/* Expenses List */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
