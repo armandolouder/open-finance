@@ -104,7 +104,7 @@ function CardDetailsPageContent() {
   }, [transactions]);
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto pb-20 flex flex-col lg:flex-row gap-6">
+    <div className="w-full max-w-[1200px] pb-20 flex flex-col lg:flex-row gap-6">
       
       {/* Esquerda: Informações do Cartão */}
       <div className="w-full lg:w-[340px] shrink-0 space-y-6">
@@ -181,24 +181,8 @@ function CardDetailsPageContent() {
       </div>
 
       {/* Direita: Lançamentos */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pt-2">
         
-        {/* Header month selector */}
-        <div className="flex items-center justify-between mb-8">
-           <div className="flex items-center gap-2 bg-[#121212] rounded-full px-1 py-1 border border-white/5">
-             <button onClick={() => router.push(`?month=${prevMonth(month)}`)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-muted-foreground hover:text-white"><ChevronLeft className="w-4 h-4" /></button>
-             <div className="flex items-center gap-2 text-[14px] font-semibold text-white px-2">
-               <Calendar className="w-4 h-4 text-muted-foreground" />
-               {monthLabel(month).charAt(0).toUpperCase() + monthLabel(month).slice(1)}
-             </div>
-             <button onClick={() => router.push(`?month=${nextMonth(month)}`)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-muted-foreground hover:text-white"><ChevronRight className="w-4 h-4" /></button>
-           </div>
-           
-           <button onClick={() => router.push('/')} className="px-4 py-2 bg-[#121212] hover:bg-white/5 border border-white/5 rounded-full text-[13px] font-semibold text-white transition-colors flex items-center gap-2">
-             <Filter className="w-3.5 h-3.5" /> Filtrar
-           </button>
-        </div>
-
         {/* Lançamentos Title & CSV */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
