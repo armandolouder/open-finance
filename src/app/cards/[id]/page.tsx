@@ -103,6 +103,61 @@ function CardDetailsPageContent() {
       .sort((a, b) => b.amount - a.amount);
   }, [transactions]);
 
+  if (loading) {
+    return (
+      <div className="w-full max-w-[1200px] pb-20 flex flex-col lg:flex-row gap-6">
+        {/* Esquerda Skeleton */}
+        <div className="w-full lg:w-[340px] shrink-0 space-y-6">
+          <div className="bg-[#121212] rounded-[16px] p-6 border border-white/5 shadow-2xl animate-pulse">
+             <div className="flex items-center gap-4 mb-8">
+               <div className="w-12 h-12 rounded-full bg-white/5"></div>
+               <div className="space-y-2">
+                 <div className="h-4 w-32 bg-white/5 rounded"></div>
+                 <div className="h-3 w-24 bg-white/5 rounded"></div>
+               </div>
+             </div>
+             <div className="mb-6 space-y-3">
+               <div className="flex justify-between">
+                 <div className="h-3 w-20 bg-white/5 rounded"></div>
+                 <div className="h-5 w-20 bg-white/5 rounded-full"></div>
+               </div>
+               <div className="h-8 w-40 bg-white/5 rounded"></div>
+             </div>
+             <div className="grid grid-cols-3 gap-2 py-5 border-y border-white/5 mb-5">
+               <div className="h-10 w-full bg-white/5 rounded"></div>
+               <div className="h-10 w-full bg-white/5 rounded"></div>
+               <div className="h-10 w-full bg-white/5 rounded"></div>
+             </div>
+             <div className="space-y-4">
+               <div className="h-4 w-3/4 bg-white/5 rounded"></div>
+               <div className="h-4 w-2/3 bg-white/5 rounded"></div>
+               <div className="h-4 w-5/6 bg-white/5 rounded"></div>
+             </div>
+          </div>
+        </div>
+
+        {/* Direita Skeleton */}
+        <div className="flex-1 min-w-0 pt-2 space-y-6">
+           <div className="h-10 w-48 bg-[#121212] rounded-full border border-white/5 animate-pulse"></div>
+           <div className="h-14 w-64 bg-[#121212] rounded-lg border border-white/5 animate-pulse"></div>
+           <div className="bg-[#121212] rounded-[16px] border border-white/5 overflow-hidden shadow-2xl animate-pulse">
+             <div className="h-12 border-b border-white/5 bg-white/5"></div>
+             {[1, 2, 3, 4, 5, 6].map(i => (
+               <div key={i} className="h-[72px] border-b border-white/5 px-6 flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-white/5 shrink-0"></div>
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-48 bg-white/5 rounded"></div>
+                    <div className="h-3 w-24 bg-white/5 rounded"></div>
+                  </div>
+                  <div className="h-4 w-24 bg-white/5 rounded"></div>
+               </div>
+             ))}
+           </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-[1200px] pb-20 flex flex-col lg:flex-row gap-6">
       
