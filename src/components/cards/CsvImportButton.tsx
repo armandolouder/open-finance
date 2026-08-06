@@ -45,11 +45,12 @@ interface ImportResult {
 
 interface Props {
   cardId: string;
+  month: string;
   currentTotal: number;
   onImportDone: () => void;
 }
 
-export function CsvImportButton({ cardId, currentTotal, onImportDone }: Props) {
+export function CsvImportButton({ cardId, month, currentTotal, onImportDone }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -74,6 +75,7 @@ export function CsvImportButton({ cardId, currentTotal, onImportDone }: Props) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("dryRun", "true");
+      formData.append("month", month);
 
       const res = await fetch(`/api/cards/${cardId}/import-csv`, {
         method: "POST",
@@ -111,6 +113,7 @@ export function CsvImportButton({ cardId, currentTotal, onImportDone }: Props) {
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("dryRun", "false");
+      formData.append("month", month);
 
       const res = await fetch(`/api/cards/${cardId}/import-csv`, {
         method: "POST",

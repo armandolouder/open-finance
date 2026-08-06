@@ -238,6 +238,7 @@ function CardDetailsPageContent() {
               </div>
               <CsvImportButton
                 cardId={cardId}
+                month={month}
                 currentTotal={activeBill?.total ?? 0}
                 onImportDone={() => fetchData(month)}
               />

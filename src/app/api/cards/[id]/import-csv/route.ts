@@ -159,9 +159,13 @@ export async function POST(
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const monthParam = formData.get('month') as string;
 
     if (!file) {
       return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 });
+    }
+    if (!monthParam) {
+      return NextResponse.json({ error: 'Mês não informado na requisição' }, { status: 400 });
     }
 
     const csvText = await file.text();
@@ -174,12 +178,12 @@ export async function POST(
       );
     }
 
-    // Janela de datas baseada no CSV (±5 dias de margem)
+    // Buscar data min e max do CSV para definir uma janela segura de busca no banco
     const csvDates = csvTxns.map(t => new Date(t.date + 'T12:00:00').getTime());
     const csvMinDate = new Date(Math.min(...csvDates));
     const csvMaxDate = new Date(Math.max(...csvDates));
-    csvMinDate.setDate(csvMinDate.getDate() - 5);
-    csvMaxDate.setDate(csvMaxDate.getDate() + 5);
+    csvMinDate.setDate(csvMinDate.getDate() - 45); // margem ampla de 45 dias
+    csvMaxDate.setDate(csvMaxDate.getDate() + 45);
 
     // Buscar conta
     const account = await prisma.account.findUnique({
@@ -196,14 +200,52 @@ export async function POST(
       return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
     }
 
-    // Normalizar transações do DB para comparação
-    const dbTxns: DbTx[] = account.transactions.map(t => ({
-      date: t.date,
-      amount: t.amount,
-      description: t.description,
-      normDescription: normalizeDescription(t.description),
-      externalId: t.externalId,
-    }));
+    // Buscar cartão e configurações para descobrir o closingDay exato
+    const creditCard = await prisma.creditCard.findFirst({
+      where: { accountId: account.id }
+    });
+
+    const setting = await prisma.setting.findFirst({
+      where: { key: `card_settings_${accountExternalId}` }
+    });
+
+    let customConfig: any = {};
+    if (setting) {
+      try {
+        customConfig = JSON.parse(setting.value);
+      } catch {}
+    }
+
+    let closingDayNum = customConfig.closingDay ?? creditCard?.closingDay;
+    if (!closingDayNum && creditCard?.dueDay) {
+       closingDayNum = creditCard.dueDay - 9;
+       if (closingDayNum <= 0) closingDayNum += 30; 
+    }
+    const currentClosingDay = closingDayNum || 25;
+
+    function getTxBillMonth(dateStr: Date): string {
+      const txDate = new Date(dateStr);
+      const txYear = txDate.getFullYear();
+      const txMonth = txDate.getMonth();
+      const txDay = txDate.getDate();
+      
+      if (txDay > currentClosingDay) {
+        const nextMonth = new Date(txYear, txMonth + 1, 1);
+        return `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+      }
+      return `${txYear}-${String(txMonth + 1).padStart(2, '0')}`;
+    }
+
+    // Normalizar e filtrar apenas transações do banco pertencentes À MESMA FATURA (mês)
+    const dbTxns: DbTx[] = account.transactions
+      .filter(t => getTxBillMonth(t.date) === monthParam)
+      .map(t => ({
+        date: t.date,
+        amount: t.amount,
+        description: t.description,
+        normDescription: normalizeDescription(t.description),
+        externalId: t.externalId,
+      }));
 
     // ✅ Reconciliação com matching bipartito
     const { matched, missing } = reconcile(csvTxns, dbTxns);
