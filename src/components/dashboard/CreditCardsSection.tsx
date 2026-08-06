@@ -135,7 +135,7 @@ export function CreditCardsSection({ hideTransactions }: { hideTransactions?: bo
       {!loading && !error && (
         <>
           {/* Grid responsivo de cartões */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
             {cards.map((card) => {
               const brand = getBankBranding(card.name, card.institutionName);
               const logoUrl = getBankLogoUrl(card.name, card.institutionName, card.institutionLogo);

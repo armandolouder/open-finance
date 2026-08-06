@@ -51,7 +51,7 @@ export default function Dashboard() {
           {/* BANK ACCOUNTS */}
           <div>
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 mt-2">Contas Correntes</h3>
-            <div className="flex flex-nowrap overflow-x-auto gap-4 pb-2 snap-x">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 pb-2">
               {data?.accounts?.filter((a: any) => a.type === 'BANK').map((acc: any, i: number) => {
                 const brand = getBankBranding(acc.name, acc.institution, acc.customColor);
                 const logoUrl = getBankLogoUrl(acc.name, acc.institution);
@@ -60,7 +60,7 @@ export default function Dashboard() {
                   <div 
                     key={i} 
                     className={cn(
-                      "snap-start shrink-0 w-64 p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-sm transition-transform hover:-translate-y-1",
+                      "p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-sm transition-transform hover:-translate-y-1 w-full",
                       brand.bg
                     )}
                   >
