@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Landmark, Pencil, Check, X, User, Building2, Trash2, GripVertical } from "lucide-react";
+import { Landmark, Pencil, Check, X, User, Building2, Trash2, GripVertical, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn, getBankLogo, getBankBranding } from "@/lib/utils";
 import { PluggyConnectButton } from "@/components/PluggyConnectButton";
 
@@ -301,30 +301,56 @@ export default function AccountsPage() {
             Conectando Bancos...
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {syncingConnections.map((conn) => (
-              <div 
-                key={conn.id} 
-                className="group relative bg-card hover:bg-muted/50 border border-border rounded-2xl p-5 transition-all overflow-hidden"
-              >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/10 via-primary to-primary/10 bg-[length:200%_100%] animate-shimmer" />
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 border border-border">
-                    <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-card-foreground truncate">
-                      {conn.institutionName}
-                    </p>
-                    <p className="text-sm text-muted-foreground truncate font-mono">
-                      {conn.status}
-                    </p>
-                    <p className="text-xs text-primary font-medium mt-1">
-                      Puxando dados, aguarde...
-                    </p>
+            {syncingConnections.map((conn) => {
+              const isError = ['ERROR', 'LOGIN_ERROR', 'OUTDATED'].includes(conn.status);
+              const isSuccessEmpty = conn.status === 'UPDATED';
+              const isUpdating = !isError && !isSuccessEmpty;
+              
+              return (
+                <div 
+                  key={conn.id} 
+                  className={`group relative bg-card border rounded-2xl p-5 transition-all overflow-hidden ${
+                    isError ? 'border-destructive/30 hover:border-destructive/50 bg-destructive/5' : 
+                    'hover:bg-muted/50 border-border'
+                  }`}
+                >
+                  {isUpdating && <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/10 via-primary to-primary/10 bg-[length:200%_100%] animate-shimmer" />}
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                      isError ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-muted border-border'
+                    }`}>
+                      {isUpdating ? (
+                        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      ) : isError ? (
+                        <AlertCircle className="w-6 h-6" />
+                      ) : (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-card-foreground truncate">
+                        {conn.institutionName}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate font-mono">
+                        Status: {conn.status}
+                      </p>
+                      <p className={`text-xs font-medium mt-1 ${isError ? 'text-destructive' : isSuccessEmpty ? 'text-emerald-500' : 'text-primary'}`}>
+                        {isUpdating ? 'Puxando dados, aguarde...' : isError ? 'Falha na conexão' : 'Nenhuma conta encontrada'}
+                      </p>
+                    </div>
+                    {(!isUpdating) && (
+                      <button 
+                        onClick={() => handleDelete(conn.itemId, conn.institutionName)}
+                        className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                        title="Remover conexão com falha"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}

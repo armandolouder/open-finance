@@ -90,7 +90,11 @@ export class CustomPluggyClient {
       const results = data.results ?? [];
 
       allTransactions = allTransactions.concat(results);
-      cursor = data.nextCursor ?? data.next ?? null; // suporte aos dois formatos de resposta
+      const nextC = data.nextCursor ?? data.next ?? null;
+      if (cursor === nextC) {
+        break; // previne loop infinito se a API retornar o mesmo cursor
+      }
+      cursor = nextC;
 
       // Para se não houver mais páginas ou atingir o cap de segurança
     } while (cursor && allTransactions.length < SAFETY_CAP);
