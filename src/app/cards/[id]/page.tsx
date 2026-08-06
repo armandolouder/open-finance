@@ -255,7 +255,7 @@ function CardDetailsPageContent() {
            {groupedTransactions.length === 0 ? (
              <p className="text-[13px] text-muted-foreground text-center py-4">Nenhum gasto para resumir.</p>
            ) : (
-             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+             <div className="space-y-4">
                {groupedTransactions.map((group, index) => (
                  <div key={index} className="flex justify-between items-start gap-3">
                    <div className="flex flex-col gap-1 min-w-0">
