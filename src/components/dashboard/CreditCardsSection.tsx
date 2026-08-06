@@ -5,7 +5,7 @@ import {
   CreditCard, ChevronLeft, ChevronRight, Pencil, X, AlertCircle, Repeat, MoreVertical, RefreshCw, Calendar
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { cn, getBankBranding, getBankLogoUrl, monthLabel } from "@/lib/utils";
+import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
 
 const fmt = (v: number | undefined | null) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   CreditCard, ChevronDown, ChevronUp, Repeat, AlertCircle,
-  ChevronLeft, ChevronRight, Pencil, X, Check, LayoutGrid, MoreVertical, Link2, Calendar
+  ChevronLeft, ChevronRight, Pencil, X, Check, LayoutGrid, MoreVertical, Link2, Calendar, RefreshCw
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { cn, getBankLogo, getBankBranding, getBankLogoUrl, monthKey, monthLabel } from "@/lib/utils";
@@ -213,7 +213,73 @@ function CardsPageContent() {
                       )}
                     </div>
                     <div className="min-w-0">
-        </>
+                      <h3 className="text-[13px] font-bold text-white uppercase tracking-wide leading-tight truncate">{card.name}</h3>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {card.institutionName ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 text-[#38bdf8]" />
+                            <span className="text-[11px] text-[#38bdf8] font-medium">Open Finance</span>
+                          </>
+                        ) : (
+                          <>
+                            <Pencil className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-[11px] text-muted-foreground font-medium">Manual</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingCard(card);
+                      const dDay = card.dueDate ? parseInt(card.dueDate.split('-')[2]) : '';
+                      const cDay = card.closingDate ? parseInt(card.closingDate.split('-')[2]) : '';
+                      setDueDayInput(dDay.toString());
+                      setClosingDayInput(cDay.toString());
+                      setWaiverTargetInput(card.waiverTarget ? card.waiverTarget.toString() : "");
+                      setFeeAmountInput(card.feeAmount ? card.feeAmount.toString() : "");
+                    }}
+                    className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* Resumo da Fatura */}
+                <div className="flex items-center justify-between py-4 border-b border-white/5">
+                  <span className="text-[13px] text-muted-foreground">Fatura de {monthLabel(month).split(' de')[0]}</span>
+                  <span className="text-[15px] font-bold text-white">{fmt(card.bills[0]?.total ?? 0)}</span>
+                </div>
+
+                {/* Aviso */}
+                <div className="py-3 border-b border-white/5 flex gap-2 items-start">
+                  <AlertCircle className="w-4 h-4 text-muted-foreground opacity-50 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-muted-foreground leading-snug">Fatura ainda não fechada — os valores podem estar incompletos.</p>
+                </div>
+
+                {/* Limite e Status */}
+                <div className="pt-4 pb-1 space-y-3">
+                  <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                    <CreditCard className="w-4 h-4 opacity-50" />
+                    <span>Limite disponível <span className="text-white font-semibold ml-1">{card.availableLimit ? fmt(card.availableLimit) : 'UNLIMITED'}</span></span>
+                  </div>
+                  <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 opacity-50" />
+                      <span>Fecha em {closingDateDisplay}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8]" />
+                      <span className="text-[#38bdf8] font-medium">Em aberto</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       )}
 
       {/* Settings Modal */}
