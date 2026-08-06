@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Pencil, X, Check
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { cn, getBankLogo, monthKey, monthLabel } from "@/lib/utils";
+import { cn, getBankLogo, getBankBranding, getBankLogoUrl, monthKey, monthLabel } from "@/lib/utils";
 
 const fmt = (v: number | undefined | null) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -53,6 +53,8 @@ interface CardData {
   creditLimit?: number;
   availableLimit?: number;
   minimumPayment?: number;
+  waiverTarget?: number;
+  feeAmount?: number;
   creditData?: {
     creditLimit: number;
     balance: number;
@@ -72,6 +74,8 @@ function CardsPageContent() {
   const [editingCard, setEditingCard] = useState<CardData | null>(null);
   const [dueDayInput, setDueDayInput] = useState("");
   const [closingDayInput, setClosingDayInput] = useState("");
+  const [waiverTargetInput, setWaiverTargetInput] = useState("");
+  const [feeAmountInput, setFeeAmountInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
@@ -119,55 +123,73 @@ function CardsPageContent() {
         <>
           {/* Seletor de cartões */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {cards.map((card) => (
+            {cards.map((card) => {
+              const brand = getBankBranding(card.name, card.institutionName);
+              const logoUrl = getBankLogoUrl(card.name, card.institutionName, card.institutionLogo);
+              
+              return (
               <button
                 key={card.id}
                 onClick={() => setSelectedCard(card.id)}
+                style={{
+                  background: selectedCard === card.id
+                    ? (brand.cardBgSelected ?? brand.cardBg ?? undefined)
+                    : (brand.cardBg ?? undefined),
+                }}
                 className={cn(
-                  "relative overflow-hidden rounded-2xl p-5 text-left transition-all border shadow-sm",
+                  "relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-300 border shadow-sm w-full",
+                  brand.border,
                   selectedCard === card.id
-                    ? "border-primary/50 bg-primary/5 shadow-primary/10 shadow-md"
-                    : "border-border bg-card hover:border-border/80 hover:shadow-md"
+                    ? "shadow-lg ring-1 ring-white/10"
+                    : "hover:border-white/20 hover:shadow-md"
                 )}
               >
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                      {card.institutionLogo ? (
-                        <img src={getBankLogo(card.name, card.institutionLogo)} alt="" className="w-8 h-8 object-contain" />
+                {/* Orbe de brilho sutil */}
+                <div
+                  className="absolute -top-6 -right-6 w-24 h-24 rounded-full pointer-events-none"
+                  style={{ background: `radial-gradient(circle, ${brand.accent ?? 'transparent'} 0%, transparent 70%)` }}
+                />
+                {/* Header: logo + nome + nível */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
                       ) : (
-                        <CreditCard className="w-5 h-5 text-muted-foreground" />
+                        <div className={cn("font-bold text-sm", brand.text)}>{brand.icon}</div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 group/title">
-                      <div>
-                        <p className="font-semibold text-foreground capitalize leading-snug">{card.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{card.brand ?? card.institutionName}</p>
-                      </div>
-                      <div
-                        role="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingCard(card);
-                          const dDay = card.dueDate ? parseInt(card.dueDate.split('-')[2]) : '';
-                          const cDay = card.closingDate ? parseInt(card.closingDate.split('-')[2]) : '';
-                          setDueDayInput(dDay.toString());
-                          setClosingDayInput(cDay.toString());
-                        }}
-                        className="p-1.5 bg-muted text-muted-foreground hover:text-foreground rounded-md transition-opacity cursor-pointer"
-                        title="Configurar datas do cartão"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground text-sm truncate leading-tight">{card.name}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{card.brand ?? card.institutionName}</p>
                     </div>
                   </div>
-                  {card.level && (
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border border-border">
-                      {card.level}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {card.level && (
+                      <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/5">
+                        {card.level}
+                      </span>
+                    )}
+                    <div
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingCard(card);
+                        const dDay = card.dueDate ? parseInt(card.dueDate.split('-')[2]) : '';
+                        const cDay = card.closingDate ? parseInt(card.closingDate.split('-')[2]) : '';
+                        setDueDayInput(dDay.toString());
+                        setClosingDayInput(cDay.toString());
+                        setWaiverTargetInput(card.waiverTarget ? card.waiverTarget.toString() : "");
+                        setFeeAmountInput(card.feeAmount ? card.feeAmount.toString() : "");
+                      }}
+                      className="p-1.5 bg-muted text-muted-foreground hover:text-foreground rounded-md transition-opacity cursor-pointer"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </div>
+                  </div>
                 </div>
 
+                {/* Valores */}
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Total Fatura ({monthShort(month)})</p>
@@ -179,37 +201,75 @@ function CardsPageContent() {
                   </div>
                 </div>
 
+                {card.waiverTarget ? (() => {
+                  const currentTotal = card.bills[0]?.total ?? 0;
+                  const isExempt = currentTotal >= card.waiverTarget;
+                  const feeCharged = card.feeAmount ? card.bills[0]?.transactions.some(t => Math.abs(t.amount) === card.feeAmount) : false;
+
+                  return (
+                    <div className="mt-4 space-y-1.5">
+                      <div className="flex justify-between items-end">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta de Isenção</p>
+                        <p className="text-[10px] font-medium text-foreground">{fmt(currentTotal)} / {fmt(card.waiverTarget)}</p>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className={cn("h-full transition-all duration-500", isExempt ? "bg-emerald-500" : "bg-gradient-to-r from-amber-500 to-amber-300")} 
+                          style={{ width: `${Math.min(100, (currentTotal / card.waiverTarget) * 100)}%` }}
+                        />
+                      </div>
+                      
+                      {/* Inteligência de Anuidade */}
+                      {card.feeAmount && (
+                        <div className="pt-1">
+                          {feeCharged ? (
+                            <p className="text-[10px] text-destructive flex items-center gap-1 font-medium bg-destructive/10 px-2 py-1 rounded w-max">
+                              <AlertCircle className="w-3 h-3" /> Anuidade de {fmt(card.feeAmount)} cobrada nesta fatura.
+                            </p>
+                          ) : isExempt ? (
+                            <p className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium bg-emerald-400/10 px-2 py-1 rounded w-max">
+                              <AlertCircle className="w-3 h-3" /> Meta batida! Economia de {fmt(card.feeAmount)}.
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
+                              Anuidade padrão: {fmt(card.feeAmount)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })() : null}
+
+                {/* Datas */}
                 {card.dueDate && (() => {
                   const day = card.dueDate.split('-')[2];
                   const [y, m] = month.split('-');
-                  // Data de vencimento projetada para o mês selecionado
                   const projectedDueDate = `${y}-${m}-${day}`;
                   
-                  // Se a API não fornecer fechamento, estimamos como 8 dias antes do vencimento
                   let closingDateDisplay = '';
                   if (card.closingDate) {
                     const cDay = card.closingDate.split('-')[2];
                     closingDateDisplay = `${cDay}/${m}/${y}`;
                   } else {
-                    // Cálculo de fallback (9 dias antes) caso o banco/API não envie
                     const d = new Date(parseInt(y), parseInt(m) - 1, parseInt(day));
                     d.setDate(d.getDate() - 9);
                     closingDateDisplay = d.toLocaleDateString("pt-BR");
                   }
 
                   return (
-                    <div className="mt-4 pt-3 border-t border-border/50 flex flex-wrap items-center gap-y-1 gap-x-2 text-xs text-muted-foreground">
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                      <div>Fechamento: <span className="text-foreground font-medium">{closingDateDisplay}</span></div>
-                      <span className="text-border">|</span>
-                      <div>Vencimento: <span className="text-foreground font-medium">{fmtDate(projectedDueDate)}</span></div>
-                      <span className="text-border">|</span>
-                      <div>Mínimo: <span className="text-foreground font-medium">{fmt(card.minimumPayment)}</span></div>
+                    <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground">
+                      <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span>Fecha: {closingDateDisplay}</span>
+                      <span className="opacity-40">|</span>
+                      <span>Vence: {fmtDate(projectedDueDate)}</span>
+                      <span className="opacity-40">|</span>
+                      <span>Mín: {fmt(card.minimumPayment)}</span>
                     </div>
                   );
                 })()}
               </button>
-            ))}
+            )})}
           </div>
 
           {/* Fatura do cartão selecionado */}
@@ -315,6 +375,28 @@ function CardsPageContent() {
                   className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">Meta de Isenção de Anuidade (R$)</label>
+                <input
+                  type="number"
+                  min="0" step="0.01"
+                  value={waiverTargetInput}
+                  onChange={e => setWaiverTargetInput(e.target.value)}
+                  placeholder="Ex: 5000.00"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">Valor da Anuidade (R$)</label>
+                <input
+                  type="number"
+                  min="0" step="0.01"
+                  value={feeAmountInput}
+                  onChange={e => setFeeAmountInput(e.target.value)}
+                  placeholder="Ex: 49.90"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
             </div>
             <div className="p-4 bg-muted/30 border-t border-border flex justify-end gap-2">
               <button
@@ -335,6 +417,8 @@ function CardsPageContent() {
                         cardId: editingCard.id,
                         dueDay: dueDayInput ? parseInt(dueDayInput) : null,
                         closingDay: closingDayInput ? parseInt(closingDayInput) : null,
+                        waiverTarget: waiverTargetInput ? parseFloat(waiverTargetInput) : null,
+                        feeAmount: feeAmountInput ? parseFloat(feeAmountInput) : null,
                       })
                     });
                     setEditingCard(null);
