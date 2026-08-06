@@ -64,9 +64,9 @@ function isSameTransaction(
   const csvDate = new Date(csvTx.date + 'T12:00:00');
   const dbDate = new Date(dbTx.date);
 
-  // Tolerância de ±1 dia (Pluggy registra com 1 dia de diferença às vezes)
+  // Tolerância de ±2 dias — o Pluggy registra até 2 dias após a data de autorização do Nubank
   const daysDiff = Math.abs((csvDate.getTime() - dbDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (daysDiff > 1) return false;
+  if (daysDiff > 2) return false;
 
   // Valores devem ser idênticos
   const csvAmt = Math.abs(csvTx.amount);
