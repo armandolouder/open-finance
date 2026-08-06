@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ interface ExpenseModalProps {
 
 export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
@@ -24,6 +25,17 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
     creditCardId: "",
     description: "",
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/categories")
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) setCategories(data);
+        })
+        .catch(console.error);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -121,6 +133,20 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
                  onChange={e => setFormData({...formData, dayOfMonth: e.target.value})}
                />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-1">Categoria</label>
+            <select 
+              className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 appearance-none"
+              value={formData.categoryId}
+              onChange={e => setFormData({...formData, categoryId: e.target.value})}
+            >
+              <option value="">Selecionar categoria...</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           <div>
