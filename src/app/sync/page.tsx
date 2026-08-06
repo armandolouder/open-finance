@@ -4,15 +4,15 @@ import { useState } from "react";
 import { RefreshCw, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 
+import { useSync } from "@/components/SyncProvider";
+
 const PluggyConnect = dynamic(
   () => import("react-pluggy-connect").then((mod) => mod.PluggyConnect),
   { ssr: false }
 );
 
 export default function SyncPage() {
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { isSyncing, lastSyncResult, lastSyncError, startSync } = useSync();
   const [updateToken, setUpdateToken] = useState<string | null>(null);
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
@@ -38,27 +38,6 @@ export default function SyncPage() {
     }
   };
 
-  const testConnection = async () => {
-    setLoading(true);
-    setError(null);
-    setResults(null);
-
-    try {
-      const res = await fetch("/api/sync", { method: "POST" });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Erro desconhecido");
-      }
-
-      setResults(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6 pb-10">
       <h1 className="text-2xl font-bold text-foreground">Sincronização e Conexões</h1>
@@ -72,29 +51,29 @@ export default function SyncPage() {
         </div>
 
         <button 
-          onClick={testConnection}
-          disabled={loading}
+          onClick={startSync}
+          disabled={isSyncing}
           className="bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2"
         >
-          <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
-          {loading ? "Sincronizando..." : "Forçar Sincronização com a Pluggy"}
+          <RefreshCw className={`w-5 h-5 ${isSyncing ? "animate-spin" : ""}`} />
+          {isSyncing ? "Sincronizando..." : "Forçar Sincronização com a Pluggy"}
         </button>
 
-        {error && (
+        {lastSyncError && (
           <div className="mt-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <div>
               <h4 className="font-semibold text-destructive">Falha na Conexão</h4>
-              <p className="text-sm text-destructive/80 mt-1">{error}</p>
+              <p className="text-sm text-destructive/80 mt-1">{lastSyncError}</p>
             </div>
           </div>
         )}
 
-        {results && (
+        {lastSyncResult && (
           <div className="mt-6 space-y-4">
             <h3 className="font-semibold text-foreground">Resultado do Teste:</h3>
             <div className="space-y-3">
-              {results.items?.map((item: any, idx: number) => (
+              {lastSyncResult.items?.map((item: any, idx: number) => (
                 <div key={idx} className="bg-muted p-4 rounded-lg border border-border flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">{item.institution || "Instituição Desconhecida"}</p>
@@ -136,7 +115,7 @@ export default function SyncPage() {
           connectToken={updateToken}
           onSuccess={() => {
             setUpdateToken(null);
-            testConnection(); // Refetch status and trigger sync
+            startSync(); // Refetch status and trigger sync
           }}
           onError={(error) => {
             console.error("Pluggy Error:", error);

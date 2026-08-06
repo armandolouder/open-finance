@@ -5,6 +5,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { SyncProvider } from "@/components/SyncProvider";
 
 const outfit = Outfit({
   variable: "--font-sans",
@@ -39,13 +40,15 @@ export default function RootLayout({
       <body className="h-full flex overflow-hidden selection:bg-primary/30 font-sans">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 bg-background text-foreground">
-          <React.Suspense fallback={<header className="h-24 bg-background" />}>
-            <Topbar />
-          </React.Suspense>
-          <main className="flex-1 overflow-y-auto p-4 md:p-8 pt-4 md:pt-6 relative pb-24 md:pb-8">
-            {children}
-          </main>
-          <BottomNav />
+          <SyncProvider>
+            <React.Suspense fallback={<header className="h-24 bg-background" />}>
+              <Topbar />
+            </React.Suspense>
+            <main className="flex-1 overflow-y-auto p-4 md:p-8 pt-4 md:pt-6 relative pb-24 md:pb-8">
+              {children}
+            </main>
+            <BottomNav />
+          </SyncProvider>
         </div>
       </body>
     </html>
