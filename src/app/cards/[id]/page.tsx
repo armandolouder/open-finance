@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
-  CreditCard, ChevronLeft, ChevronRight, AlertCircle, Repeat, ArrowLeft, Calendar, Filter
+  CreditCard, ChevronLeft, ChevronRight, AlertCircle, Repeat, ArrowLeft, Calendar, Filter, Check
 } from "lucide-react";
 import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
 import { CsvImportButton } from "@/components/cards/CsvImportButton";
@@ -85,7 +85,19 @@ function CardDetailsPageContent() {
   useEffect(() => { fetchData(month); }, [month, fetchData]);
 
   const activeBill = card?.bills?.[0];
-  const transactions = activeBill?.transactions || [];
+  const allTransactions = activeBill?.transactions || [];
+
+  const payments = allTransactions.filter(tx => 
+    tx.category === "Credit card payment" || 
+    tx.description.toLowerCase().includes("pagamento recebido") ||
+    tx.description.toLowerCase().includes("pagamento de fatura")
+  );
+  
+  const transactions = allTransactions.filter(tx => 
+    !(tx.category === "Credit card payment" || 
+      tx.description.toLowerCase().includes("pagamento recebido") ||
+      tx.description.toLowerCase().includes("pagamento de fatura"))
+  );
 
   // Agrupamento de transações para a sidebar
   const groupedTransactions = useMemo(() => {
@@ -303,9 +315,24 @@ function CardDetailsPageContent() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-4">
-             <span className="text-[13px] text-muted-foreground font-medium">{transactions.length} transações</span>
-             <CsvImportButton cardId={cardId} month={month} currentTotal={activeBill?.total ?? 0} onImportDone={() => fetchData(month)} />
+          <div className="flex flex-col items-end gap-3">
+             {payments.length > 0 && (
+                <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 pl-3 pr-4 py-2 rounded-xl text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                   <div className="bg-emerald-500/20 p-1.5 rounded-full">
+                      <Check className="w-4 h-4 text-emerald-400" strokeWidth={3} />
+                   </div>
+                   <div className="text-right">
+                     <p className="text-[11px] font-bold tracking-wider uppercase text-emerald-500">Fatura Paga</p>
+                     <p className="text-[14px] font-bold leading-none mt-0.5 text-emerald-400">
+                       {fmt(payments.reduce((acc, p) => acc + Math.abs(p.amount), 0))}
+                     </p>
+                   </div>
+                </div>
+             )}
+             <div className="flex items-center gap-4">
+                <span className="text-[13px] text-muted-foreground font-medium">{transactions.length} transações</span>
+                <CsvImportButton cardId={cardId} month={month} currentTotal={activeBill?.total ?? 0} onImportDone={() => fetchData(month)} />
+             </div>
           </div>
         </div>
 
