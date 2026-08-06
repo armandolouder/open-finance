@@ -40,7 +40,7 @@ export async function applyCategoriesToTransactions(transactions: any[], account
       matchedCat = overrideMap.get(tx.id);
     } else {
       // Regra 1: Saídas da conta PJ (Pró-labore)
-      if (accountName && accountName.toLowerCase().includes('pj') && tx.amount < 0) {
+      if (accountName && accountName.toLowerCase().includes('pj') && (tx.amount < 0 || tx.type === 'DEBIT')) {
         const proLaboreCat = categories.find(c => 
           c.name.toLowerCase().includes('pró-labore') || 
           c.name.toLowerCase().includes('pro-labore') || 

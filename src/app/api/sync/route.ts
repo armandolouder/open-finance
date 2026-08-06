@@ -92,8 +92,20 @@ export async function POST() {
           // Fetch transactions
           const { transactions } = await pluggyClient.fetchTransactions(acc.id);
 
+          // Get custom name from Settings
+          let customName = acc.name;
+          const labelSetting = await prisma.setting.findUnique({
+            where: { key: `account_label_${acc.id}` }
+          });
+          if (labelSetting) {
+            try {
+              const val = JSON.parse(labelSetting.value);
+              if (val.customName) customName = val.customName;
+            } catch {}
+          }
+
           // Apply categories
-          const processedTransactions = await applyCategoriesToTransactions(transactions, acc.name);
+          const processedTransactions = await applyCategoriesToTransactions(transactions, customName);
 
           // Upsert transactions
           for (const tx of processedTransactions) {
