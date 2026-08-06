@@ -73,7 +73,8 @@ export async function GET(req: Request) {
         direction: 'DEBIT',
         totalInstallments: { gt: 1 },
         installmentNumber: { not: null }
-      }
+      },
+      include: { account: true }
     });
 
     const normalizeDesc = (desc: string) => desc.replace(/\s*\d+\/\d+\s*$/, '').trim().toLowerCase();
@@ -93,6 +94,8 @@ export async function GET(req: Request) {
         curr => normalizeDesc(curr.description) === normalizeDesc(t.description) && curr.totalInstallments === t.totalInstallments
       );
 
+      const isCreditCard = t.account?.type === 'CREDIT';
+      
       if (!existsInCurrentMonth) {
         const diffMonths = (year - t.date.getFullYear()) * 12 + (month - (t.date.getMonth() + 1));
         
@@ -107,6 +110,7 @@ export async function GET(req: Request) {
               installmentNumber: projectedInstallmentNumber,
               projectedDate: projDate,
               isProjected: true,
+              isCreditCard,
               title: getCleanTitle(t.description)
             } as any);
           }
@@ -115,8 +119,8 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      transactions,
-      projections
+      transactions: transactions.map(t => ({ ...t, isCreditCard: t.account?.type === 'CREDIT' })),
+      projections: projections.map(p => ({ ...p, isCreditCard: p.isCreditCard ?? (p.creditCardId != null || p.account?.type === 'CREDIT') }))
     });
   } catch (error) {
     console.error("GET /api/expenses error:", error);

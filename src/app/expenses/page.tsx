@@ -16,6 +16,7 @@ interface Transaction {
   isProjected?: boolean;
   installmentNumber?: number;
   totalInstallments?: number;
+  isCreditCard?: boolean;
 }
 
 function ExpensesPageContent() {
@@ -48,9 +49,12 @@ function ExpensesPageContent() {
   const allItems = [...data.transactions, ...(data.projections || [])]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const total = allItems.reduce((acc, t) => acc + t.amount, 0);
-  const totalPaid = data.transactions.reduce((acc, t) => acc + t.amount, 0);
-  const pending = (data.projections || []).reduce((acc, t) => acc + t.amount, 0);
+  const bankItems = allItems.filter(t => !t.isCreditCard);
+  const cardItems = allItems.filter(t => t.isCreditCard);
+
+  const totalMensal = bankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const totalCartoes = cardItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const pending = (data.projections || []).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -76,16 +80,16 @@ function ExpensesPageContent() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground mb-1">Total Mensal</p>
-          <p className="text-2xl font-bold">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-muted-foreground mt-2">{allItems.length} despesas</p>
+          <p className="text-sm text-muted-foreground mb-1">Total Mensal (Contas)</p>
+          <p className="text-2xl font-bold">R$ {totalMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-muted-foreground mt-2">{bankItems.length} despesas</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
-          <p className="text-sm text-muted-foreground mb-1">Pago no mês</p>
-          <p className="text-2xl font-bold">R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <div className="absolute right-0 top-0 w-16 h-16 bg-blue-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
+          <p className="text-sm text-muted-foreground mb-1">Cartões</p>
+          <p className="text-2xl font-bold">R$ {totalCartoes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Check className="w-3 h-3 text-emerald-500" /> {data.transactions.length} confirmadas
+            <Check className="w-3 h-3 text-blue-500" /> {cardItems.length} despesas
           </p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
