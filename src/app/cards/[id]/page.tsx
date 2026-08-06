@@ -281,7 +281,7 @@ function CardDetailsPageContent() {
                 </div>
              ) : (
                transactions.map(tx => (
-                 <div key={tx.id} className="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr_200px_120px] gap-4 px-6 py-4 items-center hover:bg-white/[0.02] transition-colors group">
+                 <div key={tx.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[100px_1fr_200px_120px] gap-4 px-4 sm:px-6 py-4 items-center hover:bg-white/[0.02] transition-colors group">
                     
                     {/* Data */}
                     <div className="text-[13px] font-medium text-white/70 leading-tight hidden sm:block">

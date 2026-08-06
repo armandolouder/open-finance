@@ -4,6 +4,7 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 const outfit = Outfit({
   variable: "--font-sans",
@@ -41,9 +42,10 @@ export default function RootLayout({
           <React.Suspense fallback={<header className="h-24 bg-background" />}>
             <Topbar />
           </React.Suspense>
-          <main className="flex-1 overflow-y-auto p-8 pt-6 relative">
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 pt-4 md:pt-6 relative pb-24 md:pb-8">
             {children}
           </main>
+          <BottomNav />
         </div>
       </body>
     </html>
