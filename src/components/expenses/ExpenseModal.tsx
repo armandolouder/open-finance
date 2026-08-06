@@ -13,6 +13,8 @@ interface ExpenseModalProps {
 export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string, children?: { id: string; name: string }[] }[]>([]);
+  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
+  const [cards, setCards] = useState<{ id: string; name: string }[]>([]);
   const [selectedParentId, setSelectedParentId] = useState("");
   const [formData, setFormData] = useState({
     title: "",
@@ -22,19 +24,20 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
     startDate: new Date().toISOString().split('T')[0],
     dayOfMonth: new Date().getDate().toString(),
     categoryId: "",
-    accountId: "",
-    creditCardId: "",
+    accountOrCardId: "",
     description: "",
   });
 
   useEffect(() => {
     if (isOpen) {
-      fetch("/api/categories")
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) setCategories(data);
-        })
-        .catch(console.error);
+      fetch("/api/categories").then(res => res.json()).then(data => {
+        if (Array.isArray(data)) setCategories(data);
+      }).catch(console.error);
+
+      fetch("/api/accounts").then(res => res.json()).then(data => {
+        if (data.bankAccounts) setAccounts(data.bankAccounts);
+        if (data.creditAccounts) setCards(data.creditAccounts);
+      }).catch(console.error);
     }
   }, [isOpen]);
 
@@ -44,10 +47,17 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
     e.preventDefault();
     setLoading(true);
     try {
+      const isCard = formData.accountOrCardId.startsWith('card_');
+      const payload = {
+        ...formData,
+        accountId: formData.accountOrCardId && !isCard ? formData.accountOrCardId.replace('account_', '') : "",
+        creditCardId: isCard ? formData.accountOrCardId.replace('card_', '') : "",
+      };
+
       const res = await fetch("/api/expenses/recurring", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         onSaved();
@@ -173,11 +183,20 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
             <label className="block text-sm font-medium text-white/70 mb-1">Conta / Cartão</label>
             <select 
               className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 appearance-none"
-              value={formData.accountId}
-              onChange={e => setFormData({...formData, accountId: e.target.value})}
+              value={formData.accountOrCardId}
+              onChange={e => setFormData({...formData, accountOrCardId: e.target.value})}
             >
               <option value="">Nenhuma (Dinheiro)</option>
-              {/* Aqui podemos popular contas e cartões futuramente */}
+              {accounts.length > 0 && (
+                <optgroup label="Contas">
+                  {accounts.map(a => <option key={`account_${a.id}`} value={`account_${a.id}`}>{a.name}</option>)}
+                </optgroup>
+              )}
+              {cards.length > 0 && (
+                <optgroup label="Cartões de Crédito">
+                  {cards.map(c => <option key={`card_${c.id}`} value={`card_${c.id}`}>{c.name}</option>)}
+                </optgroup>
+              )}
             </select>
           </div>
 
