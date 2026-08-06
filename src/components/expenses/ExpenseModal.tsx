@@ -8,9 +8,10 @@ interface ExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
+  expenseId?: string | null;
 }
 
-export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
+export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseModalProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string, children?: { id: string; name: string }[] }[]>([]);
   const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
@@ -32,6 +33,43 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
 
   useEffect(() => {
     if (isOpen) {
+      if (expenseId) {
+        setLoading(true);
+        fetch("/api/expenses/recurring").then(res => res.json()).then(data => {
+          const exp = data.find((e: any) => e.id === expenseId);
+          if (exp) {
+            let acId = "";
+            if (exp.accountId) acId = `account_${exp.accountId}`;
+            else if (exp.creditCardId) acId = `card_${exp.creditCardId}`;
+            
+            setSelectedParentId(exp.category?.parentId || exp.categoryId || "");
+            
+            setFormData({
+              title: exp.title,
+              amount: exp.amount.toString(),
+              type: exp.type,
+              frequency: exp.frequency,
+              startDate: new Date(exp.startDate).toISOString().split('T')[0],
+              dayOfMonth: exp.dayOfMonth?.toString() || new Date(exp.startDate).getDate().toString(),
+              categoryId: exp.categoryId || "",
+              accountOrCardId: acId,
+              description: exp.description || "",
+              isVariable: exp.isVariable || false,
+              matchPattern: exp.matchPattern || "",
+            });
+          }
+        }).finally(() => setLoading(false));
+      } else {
+        // Reset form
+        setFormData({
+          title: "", amount: "", type: "EXPENSE", frequency: "MONTHLY",
+          startDate: new Date().toISOString().split('T')[0],
+          dayOfMonth: new Date().getDate().toString(),
+          categoryId: "", accountOrCardId: "", description: "",
+          isVariable: false, matchPattern: "",
+        });
+      }
+
       fetch("/api/categories").then(res => res.json()).then(data => {
         if (Array.isArray(data)) setCategories(data);
       }).catch(console.error);
@@ -41,7 +79,7 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
         if (data.creditAccounts) setCards(data.creditAccounts);
       }).catch(console.error);
     }
-  }, [isOpen]);
+  }, [isOpen, expenseId]);
 
   if (!isOpen) return null;
 
@@ -56,8 +94,11 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
         creditCardId: isCard ? formData.accountOrCardId.replace('card_', '') : "",
       };
 
-      const res = await fetch("/api/expenses/recurring", {
-        method: "POST",
+      const url = expenseId ? `/api/expenses/recurring/${expenseId}` : "/api/expenses/recurring";
+      const method = expenseId ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
@@ -201,6 +242,37 @@ export function ExpenseModal({ isOpen, onClose, onSaved }: ExpenseModalProps) {
               )}
             </select>
           </div>
+
+          <div className="flex items-center gap-2 mt-2 p-3 bg-white/5 rounded-xl border border-white/10">
+            <input 
+              type="checkbox" 
+              id="isVariable"
+              checked={formData.isVariable}
+              onChange={(e) => setFormData({ ...formData, isVariable: e.target.checked })}
+              className="w-4 h-4 rounded border-white/10 text-emerald-500 focus:ring-emerald-500 bg-[#2c2c2e]"
+            />
+            <label htmlFor="isVariable" className="text-sm font-medium text-white/90 cursor-pointer select-none">
+              Valor Variável (Estimativa)
+            </label>
+          </div>
+
+          {formData.isVariable && (
+            <div className="space-y-1.5 mt-1 mb-2">
+              <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                Palavras-chave no Extrato (Identificação Automática)
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: ENEL, SABESP, CLARO"
+                value={formData.matchPattern}
+                onChange={(e) => setFormData({ ...formData, matchPattern: e.target.value })}
+                className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all placeholder:text-white/20"
+              />
+              <p className="text-[10px] text-white/40 mt-1">
+                Quando a integração encontrar uma transação com essas palavras, ela substituirá esta projeção automaticamente.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-white/70 mb-1">Observações</label>

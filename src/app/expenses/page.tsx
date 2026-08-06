@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-  ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus, TrendingDown
+  ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus, TrendingDown, Edit2, Trash2
 } from "lucide-react";
 import { cn, monthKey, monthLabel } from "@/lib/utils";
 import { ExpenseModal } from "@/components/expenses/ExpenseModal";
@@ -32,6 +32,17 @@ function ExpensesPageContent() {
   const [realCardTotal, setRealCardTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
+
+  const handleDeleteExpense = async (id: string) => {
+    if (!confirm("Tem certeza que deseja apagar esta despesa recorrente?")) return;
+    try {
+      await fetch(`/api/expenses/recurring/${id}`, { method: "DELETE" });
+      fetchData(month);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchData = useCallback((m: string) => {
     setLoading(true);
@@ -157,8 +168,27 @@ function ExpensesPageContent() {
                     {t.isProjected ? "Pendente" : "Pago"}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex items-center gap-4">
                   <p className="font-bold text-foreground">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  
+                  {t.isProjected && t.id && !t.id.startsWith('proj_') && (
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => { setEditExpenseId(t.id); setIsModalOpen(true); }}
+                        className="p-1.5 rounded-md hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteExpense(t.id)}
+                        className="p-1.5 rounded-md hover:bg-white/10 text-muted-foreground hover:text-red-400 transition-colors"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -168,8 +198,9 @@ function ExpensesPageContent() {
       
       <ExpenseModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSaved={() => fetchData(month)} 
+        onClose={() => { setIsModalOpen(false); setEditExpenseId(null); }} 
+        onSaved={() => { setIsModalOpen(false); setEditExpenseId(null); fetchData(month); }} 
+        expenseId={editExpenseId}
       />
     </div>
   );

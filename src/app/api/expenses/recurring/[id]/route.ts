@@ -23,6 +23,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         status: data.status,
         totalInstallments: data.totalInstallments ? parseInt(data.totalInstallments) : undefined,
         tags: data.tags ? JSON.stringify(data.tags) : undefined,
+        isVariable: data.isVariable,
+        matchPattern: data.matchPattern,
       },
       include: { category: true, account: true, creditCard: true }
     });
