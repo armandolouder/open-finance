@@ -60,6 +60,7 @@ function ExpensesPageContent() {
   const bankItems = allItems.filter(t => !t.isCreditCard);
   const cardItems = allItems.filter(t => t.isCreditCard);
 
+  const totalRelatorio = allItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
   const totalMensal = bankItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
   const pending = (data.projections || []).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
@@ -101,10 +102,10 @@ function ExpensesPageContent() {
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-16 h-16 bg-amber-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
-          <p className="text-sm text-muted-foreground mb-1">Pendente</p>
-          <p className="text-2xl font-bold">R$ {pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-sm text-muted-foreground mb-1">Recorrentes (Relatório)</p>
+          <p className="text-2xl font-bold">R$ {totalRelatorio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Clock className="w-3 h-3 text-amber-500" /> {(data.projections || []).length} aguardando
+            <Clock className="w-3 h-3 text-amber-500" /> {allItems.length} listadas abaixo
           </p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
