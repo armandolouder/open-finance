@@ -14,8 +14,8 @@ interface ExpenseModalProps {
 export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseModalProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string, children?: { id: string; name: string }[] }[]>([]);
-  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
-  const [cards, setCards] = useState<{ id: string; name: string }[]>([]);
+  const [accounts, setAccounts] = useState<{ id: string; dbId?: string; name: string }[]>([]);
+  const [cards, setCards] = useState<{ id: string; name: string; creditData?: { id: string } }[]>([]);
   
   // Data
   const [isEditingSeries, setIsEditingSeries] = useState(false);
