@@ -91,11 +91,28 @@ export async function GET(req: NextRequest) {
 
       const originMonth = (txYear * 12 + txMonth) - (tx.installmentNumber || 1);
       const cleanDesc = tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim().substring(0, 10).toLowerCase();
-      const signature = `${tx.creditCardId || tx.accountId}-${cleanDesc}-${tx.totalInstallments}-${Math.round(Math.abs(tx.amount))}-${originMonth}`;
+      const baseSignature = `${tx.creditCardId || tx.accountId}-${cleanDesc}-${tx.totalInstallments}-${Math.round(Math.abs(tx.amount))}`;
       
-      const existing = purchaseGroups.get(signature);
+      let finalSignature = `${baseSignature}-${originMonth}`;
+      let matchedExisting = false;
+
+      for (const existingSig of purchaseGroups.keys()) {
+        if (existingSig.startsWith(baseSignature)) {
+          const existingOriginStr = existingSig.split('-').pop();
+          if (existingOriginStr) {
+            const existingOrigin = parseInt(existingOriginStr, 10);
+            if (Math.abs(existingOrigin - originMonth) <= 2) {
+              finalSignature = existingSig;
+              matchedExisting = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      const existing = purchaseGroups.get(finalSignature);
       if (!existing || (tx.installmentNumber || 0) > (existing.installmentNumber || 0)) {
-        purchaseGroups.set(signature, tx);
+        purchaseGroups.set(finalSignature, tx);
       }
     }
 
