@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, Landmark, ArrowRightLeft, CreditCard, 
-  Receipt, TrendingUp, RefreshCw, Settings, Sparkles, Tag
+  Receipt, TrendingUp, RefreshCw, Settings, Sparkles, Tag, Bot, Droplet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,12 +12,19 @@ const navGroups = [
   {
     title: "CONTROLE",
     items: [
-      { name: "Insights", href: "/investments/insights", icon: Sparkles },
       { name: "Dashboard", href: "/", icon: LayoutDashboard },
       { name: "Despesas", href: "/expenses", icon: Receipt },
       { name: "Transações", href: "/transactions", icon: ArrowRightLeft },
       { name: "Cartões", href: "/cards", icon: CreditCard },
       { name: "Investimentos", href: "/investments", icon: TrendingUp },
+    ]
+  },
+  {
+    title: "DICAS",
+    items: [
+      { name: "Insights", href: "/investments/insights", icon: Sparkles },
+      { name: "Relatório IA", href: "/ai-report", icon: Bot },
+      { name: "Torneira", href: "/faucet", icon: Droplet },
     ]
   },
   {
