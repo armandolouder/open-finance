@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     const purchaseGroups = new Map<string, typeof allInstallments[0]>();
     for (const tx of allInstallments) {
       const cleanDesc = tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim().substring(0, 20).toLowerCase();
-      const signature = `${tx.creditCardId || tx.accountId}-${cleanDesc}-${tx.totalInstallments}-${Math.abs(tx.amount)}`;
+      const signature = `${tx.creditCardId || tx.accountId}-${cleanDesc}-${tx.totalInstallments}-${Math.round(Math.abs(tx.amount))}`;
       
       const existing = purchaseGroups.get(signature);
       if (!existing || (tx.installmentNumber || 0) > (existing.installmentNumber || 0)) {
