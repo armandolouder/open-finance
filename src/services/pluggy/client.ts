@@ -79,29 +79,26 @@ export class CustomPluggyClient {
 
   async fetchTransactions(accountId: string) {
     let allTransactions: any[] = [];
-    let cursor: string | null = null;
-    const SAFETY_CAP = 2000; // evitar loop infinito em contas com histórico muito longo
+    let page = 1;
+    const SAFETY_CAP = 2000; // evitar loop infinito
 
     do {
-      const params = new URLSearchParams({ accountId });
-      if (cursor) params.set('cursor', cursor); // ✅ parâmetro correto da API v2
+      const params = new URLSearchParams({ accountId, page: String(page) });
 
-      const data = await this.get(`/v2/transactions?${params.toString()}`);
+      const data = await this.get(`/transactions?${params.toString()}`);
       const results = data.results ?? [];
 
       allTransactions = allTransactions.concat(results);
-      const nextC = data.nextCursor ?? data.next ?? null;
-      if (cursor === nextC) {
-        break; // previne loop infinito se a API retornar o mesmo cursor
+      
+      if (results.length === 0 || data.page >= data.totalPages) {
+        break;
       }
-      cursor = nextC;
+      page++;
 
-      // Para se não houver mais páginas ou atingir o cap de segurança
-    } while (cursor && allTransactions.length < SAFETY_CAP);
+    } while (allTransactions.length < SAFETY_CAP);
 
     return {
-      transactions: allTransactions,
-      nextCursor: cursor,
+      transactions: allTransactions
     };
   }
 
