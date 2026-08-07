@@ -15,7 +15,9 @@ interface Investment {
   institutionName: string;
 }
 
-const levelsData = [
+const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const getLevelsData = (totalValue: number) => [
   {
     id: 1,
     title: "Nível 1: Reserva de Emergência",
@@ -27,6 +29,11 @@ const levelsData = [
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <p className="font-bold text-white mb-1">Status ideal:</p>
           <p>Ter uma reserva rendendo pelo menos 100% do CDI (como o cofrinho do Mercado Pago a 115%). ✅</p>
+        </div>
+        <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 mt-4">
+          <p className="font-bold text-emerald-400 text-xs uppercase tracking-widest mb-1">Alocação Sugerida (40%)</p>
+          <p className="text-2xl font-black text-white">{fmt(totalValue * 0.4)}</p>
+          <p className="text-xs text-emerald-400/80 mt-1">Para o seu patrimônio atual de {fmt(totalValue)}, este seria o valor ideal apenas para a reserva.</p>
         </div>
       </div>
     ),
@@ -48,6 +55,11 @@ const levelsData = [
           <p className="font-bold text-white mb-1">O jogo:</p>
           <p>No começo, você recebe alguns centavos ou reais por mês. Se você reinvestir esses "aluguéis" comprando mais cotas, vira uma bola de neve maravilhosa (os famosos juros compostos da vida real).</p>
         </div>
+        <div className="bg-cyan-500/10 p-4 rounded-xl border border-cyan-500/20 mt-4">
+          <p className="font-bold text-cyan-400 text-xs uppercase tracking-widest mb-1">Alocação Sugerida (20%)</p>
+          <p className="text-2xl font-black text-white">{fmt(totalValue * 0.2)}</p>
+          <p className="text-xs text-cyan-400/80 mt-1">Valor ideal para buscar renda passiva mensal.</p>
+        </div>
       </div>
     ),
     check: (hasFixed: boolean, hasVar: boolean) => hasVar,
@@ -66,11 +78,16 @@ const levelsData = [
         </div>
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <p className="font-bold text-white mb-1">Por que:</p>
-          <p>Eles garantem que seu dinheiro vai render a Inflação do período MAIS uma taxa fixa (ex: IPCA + 6%). Você nunca perde poder de compra. Nota: LCIs e LCAs ainda têm a vantagem de serem isentos de Imposto de Renda.</p>
+          <p>Eles garantem que seu dinheiro vai render a Inflação do período MAIS uma taxa fixa (ex: IPCA + 6%). Você nunca perde poder de compra.</p>
+        </div>
+        <div className="bg-cyan-500/10 p-4 rounded-xl border border-cyan-500/20 mt-4">
+          <p className="font-bold text-cyan-400 text-xs uppercase tracking-widest mb-1">Alocação Sugerida (20%)</p>
+          <p className="text-2xl font-black text-white">{fmt(totalValue * 0.2)}</p>
+          <p className="text-xs text-cyan-400/80 mt-1">Valor ideal para proteger contra a inflação no médio prazo.</p>
         </div>
       </div>
     ),
-    check: () => false, // Simplificando a verificação para o frontend (requer análise de nome do ativo)
+    check: () => false, 
   },
   {
     id: 4,
@@ -88,6 +105,11 @@ const levelsData = [
           <p className="font-bold text-white mb-1">A Rota dos Dividendos:</p>
           <p>Assim como os FIIs, focar em empresas de energia, bancos e saneamento (Bolsa Brasileira) costuma gerar bons lucros distribuídos algumas vezes ao ano.</p>
         </div>
+        <div className="bg-cyan-500/10 p-4 rounded-xl border border-cyan-500/20 mt-4">
+          <p className="font-bold text-cyan-400 text-xs uppercase tracking-widest mb-1">Alocação Sugerida (10%)</p>
+          <p className="text-2xl font-black text-white">{fmt(totalValue * 0.1)}</p>
+          <p className="text-xs text-cyan-400/80 mt-1">Valor ideal para buscar alto crescimento e dividendos corporativos.</p>
+        </div>
       </div>
     ),
     check: () => false,
@@ -102,7 +124,12 @@ const levelsData = [
         <p>O Real (BRL) perde valor frente ao Dólar no longo prazo. Ter parte do patrimônio (mesmo que seja 10% ou 20%) em moeda forte protege você de crises internas no Brasil.</p>
         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
           <p className="font-bold text-white mb-1">Como fazer:</p>
-          <p>Bancos como o Banco Inter (que você tem conta) ou Nomad oferecem contas globais. Você pode investir no IVVB11 (que investe nas 500 maiores empresas dos EUA) ou comprar ações da Apple, Google, Microsoft diretamente.</p>
+          <p>Bancos como o Banco Inter (que você tem conta) ou Nomad oferecem contas globais. Você pode investir no IVVB11 (que investe nas 500 maiores empresas dos EUA) ou comprar ações diretamente.</p>
+        </div>
+        <div className="bg-cyan-500/10 p-4 rounded-xl border border-cyan-500/20 mt-4">
+          <p className="font-bold text-cyan-400 text-xs uppercase tracking-widest mb-1">Alocação Sugerida (10%)</p>
+          <p className="text-2xl font-black text-white">{fmt(totalValue * 0.1)}</p>
+          <p className="text-xs text-cyan-400/80 mt-1">Valor ideal para dolarizar parte do seu futuro.</p>
         </div>
       </div>
     ),
@@ -229,11 +256,11 @@ export default function InsightsPage() {
             </div>
             
             <div className="relative border-l-2 border-white/10 ml-4 space-y-8 pb-4">
-              {levelsData.map((level, i) => {
+              {getLevelsData(totalValue).map((level, i) => {
                 // Determine if completed
                 const isCompleted = level.check(hasFixedIncome, hasVariableIncome);
                 // Determine if it's the NEXT mission (first uncompleted)
-                const isNext = !isCompleted && (i === 0 || levelsData[i-1].check(hasFixedIncome, hasVariableIncome));
+                const isNext = !isCompleted && (i === 0 || getLevelsData(totalValue)[i-1].check(hasFixedIncome, hasVariableIncome));
                 
                 const Icon = level.icon;
 
