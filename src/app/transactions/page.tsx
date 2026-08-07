@@ -6,6 +6,7 @@ import {
   ArrowDownLeft, ArrowUpRight, Search,
   TrendingUp, TrendingDown, Wallet,
 } from "lucide-react";
+import { EditTransactionModal } from "@/components/transactions/EditTransactionModal";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -35,9 +36,14 @@ interface Transaction {
   type: "DEBIT" | "CREDIT";
   category?: string;
   categoryId?: string;
+  subcategoryId?: string;
   categoryType?: string;
   categoryColor?: string;
   accountName?: string;
+  categoryName?: string;
+  subcategoryName?: string;
+  tags?: string;
+  ignoreInReports?: boolean;
 }
 
 import { useSearchParams } from "next/navigation";
@@ -47,8 +53,9 @@ function TransactionsPageContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get("month") || monthKey(new Date());
   const [search, setSearch] = useState("");
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   
-  const { data, error, isLoading: loading } = useSWR(`/api/transactions?month=${month}`, fetcher);
+  const { data, error, isLoading: loading, mutate } = useSWR(`/api/transactions?month=${month}`, fetcher);
   
   const transactions: Transaction[] = data?.transactions || [];
   const summary = data?.summary || { totalIn: 0, totalOut: 0, balance: 0, count: 0 };
@@ -158,9 +165,10 @@ function TransactionsPageContent() {
                     {items.map((t) => {
                       const bankInfo = getBankInfo(t.accountName);
                       return (
-                        <div
+                        <button
                           key={t.id}
-                          className="flex items-center justify-between gap-4 py-4 px-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                          onClick={() => setEditingTransaction(t)}
+                          className="w-full flex items-center justify-between gap-4 py-4 px-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 text-left"
                         >
                           <div className="flex items-center gap-4 min-w-0">
                             {/* Avatar */}
@@ -181,7 +189,8 @@ function TransactionsPageContent() {
                                 {t.description}
                               </p>
                               <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mt-1 truncate">
-                                {t.accountName || "DESCONHECIDO"} | {t.category || t.categoryId || "TRANSFERS"} | {fmtDateFull(t.date)}
+                                {t.accountName || "DESCONHECIDO"} | {t.subcategoryName || t.categoryName || t.category || "TRANSFERS"} | {fmtDateFull(t.date)}
+                                {t.ignoreInReports && <span className="ml-2 text-amber-500">(Oculto)</span>}
                               </p>
                             </div>
                           </div>
@@ -192,7 +201,7 @@ function TransactionsPageContent() {
                               {t.type === "CREDIT" ? "+ " : "- "}{fmt(Math.abs(t.amount))}
                             </p>
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -202,6 +211,13 @@ function TransactionsPageContent() {
           )}
         </div>
       )}
+
+      <EditTransactionModal 
+        isOpen={!!editingTransaction} 
+        onClose={() => setEditingTransaction(null)} 
+        onSaved={() => { setEditingTransaction(null); mutate(); }} 
+        transaction={editingTransaction} 
+      />
     </div>
   );
 }

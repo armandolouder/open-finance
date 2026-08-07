@@ -1,0 +1,1 @@
+require('dotenv').config({ path: '.env.local' }); require('dotenv').config(); const { prisma } = require('./src/services/db'); async function main() { const cats = await prisma.category.findMany(); console.log(cats.map(c => c.name)); } main().catch(console.error);

@@ -35,9 +35,10 @@ export async function GET(req: Request) {
         OR: [
           { classification: { not: 'IGNORED' } },
           { classification: null }
-        ]
+        ],
+        ignoreInReports: false
       },
-      include: { account: true }
+      include: { account: true, categoryRelation: true }
     });
 
     // Get active recurring expenses to project
@@ -86,7 +87,8 @@ export async function GET(req: Request) {
         date: { lt: startDate },
         direction: 'DEBIT',
         totalInstallments: { gt: 1 },
-        installmentNumber: { not: null }
+        installmentNumber: { not: null },
+        ignoreInReports: false
       },
       include: { account: true }
     });

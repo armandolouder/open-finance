@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
               gte: startDate,
               lte: endDate
             }
+          },
+          include: {
+            categoryRelation: true,
+            subcategoryRelation: true
           }
         }
       }
@@ -49,17 +53,19 @@ export async function GET(request: NextRequest) {
       const accSettings = accountSettings[account.externalId] || {};
       for (const t of account.transactions) {
         allTransactions.push({
-          id: t.externalId,
+          id: t.id,
+          externalId: t.externalId,
           description: t.description,
           amount: t.amount,
           date: t.date.toISOString(),
           type: t.direction,
           category: t.category,
-          categoryId: null,
-          parentCategory: null, 
-          parentCategoryId: null,
-          categoryType: null,
-          categoryColor: null, 
+          categoryId: t.categoryId,
+          subcategoryId: t.subcategoryId,
+          categoryName: t.categoryRelation?.name || null,
+          subcategoryName: t.subcategoryRelation?.name || null,
+          tags: t.tags || "",
+          ignoreInReports: t.ignoreInReports,
           accountName: accSettings.customName || account.name,
           accountId: account.externalId,
           balance: null, 

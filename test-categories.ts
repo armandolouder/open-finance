@@ -1,0 +1,1 @@
+import { prisma } from './src/services/db'; async function main() { const cats = await prisma.category.findMany({ include: { rules: true } }); console.log(JSON.stringify(cats, null, 2)); } main().catch(console.error).finally(() => prisma.$disconnect());

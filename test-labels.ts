@@ -1,0 +1,1 @@
+import { prisma } from './src/services/db'; async function main() { const settings = await prisma.setting.findMany({ where: { key: { startsWith: 'account_label_' } } }); console.log(JSON.stringify(settings, null, 2)); } main().catch(console.error);

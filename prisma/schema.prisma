@@ -83,6 +83,11 @@ model Transaction {
   isManual         Boolean  @default(false)
   recurringExpenseId String?
   
+  categoryId       String?
+  subcategoryId    String?
+  tags             String?
+  ignoreInReports  Boolean  @default(false)
+
   // Credit Card Metadata
   billForecastDate String?  // e.g. "2026-08"
   purchaseDate     DateTime?
@@ -97,6 +102,8 @@ model Transaction {
   account          Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   entity           Entity? @relation(fields: [entityId], references: [id])
   recurringExpense RecurringExpense? @relation(fields: [recurringExpenseId], references: [id])
+  categoryRelation Category? @relation("TransactionCategory", fields: [categoryId], references: [id])
+  subcategoryRelation Category? @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
 
   @@index([accountId])
   @@index([date])
@@ -207,6 +214,8 @@ model Category {
   rules     TransactionRule[]
   overrides TransactionOverride[]
   recurringExpenses RecurringExpense[]
+  transactions        Transaction[] @relation("TransactionCategory")
+  subtransactions     Transaction[] @relation("TransactionSubcategory")
 }
 
 model TransactionRule {
