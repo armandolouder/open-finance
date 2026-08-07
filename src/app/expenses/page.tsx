@@ -23,6 +23,7 @@ interface Expense {
   series?: { type: string, installments: number | null };
   paymentMethod: string | null;
   reconciliations: any[];
+  isPluggyInstallment?: boolean;
 }
 
 function ExpensesPageContent() {

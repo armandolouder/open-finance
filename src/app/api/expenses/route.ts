@@ -61,8 +61,7 @@ export async function GET(req: NextRequest) {
         category: tx.categoryRelation ? {
           id: tx.categoryRelation.id,
           name: tx.categoryRelation.name,
-          color: tx.categoryRelation.color,
-          icon: tx.categoryRelation.icon
+          color: tx.categoryRelation.color
         } : null,
         series: { type: 'INSTALLMENT' },
         reconciliations: [],
