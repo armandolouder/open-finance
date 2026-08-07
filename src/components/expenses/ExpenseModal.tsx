@@ -97,8 +97,10 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
       }).catch(console.error);
 
       fetch("/api/accounts").then(res => res.json()).then(data => {
-        if (data.bankAccounts) setAccounts(data.bankAccounts);
-        if (data.creditAccounts) setCards(data.creditAccounts);
+        if (data.accounts) {
+          setAccounts(data.accounts.filter((a: any) => a.type === 'BANK'));
+          setCards(data.accounts.filter((a: any) => a.type === 'CREDIT'));
+        }
       }).catch(console.error);
     }
   }, [isOpen, expenseId]);
@@ -112,9 +114,14 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
       const isCard = formData.accountOrCardId.startsWith('card_');
       const payload = {
         ...formData,
+        type: formData.creationType,
+        startDate: formData.dueDate,
+        installments: parseInt(formData.installments, 10),
         amount: parseFloat(formData.amount.replace(',', '.')),
-        accountId: formData.accountOrCardId && !isCard ? formData.accountOrCardId.replace('account_', '') : "",
-        creditCardId: isCard ? formData.accountOrCardId.replace('card_', '') : "",
+        accountId: (formData.accountOrCardId && !isCard) ? formData.accountOrCardId.replace('account_', '') : null,
+        creditCardId: isCard ? formData.accountOrCardId.replace('card_', '') : null,
+        categoryId: formData.categoryId || null,
+        subcategoryId: formData.subcategoryId || null,
       };
 
       const url = expenseId ? `/api/expenses/${expenseId}` : "/api/expenses";
