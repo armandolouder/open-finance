@@ -168,6 +168,11 @@ function ExpensesPageContent() {
                             Recorrente
                           </span>
                         )}
+                        {exp.isPluggyInstallment && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#1B221E]/60 text-muted-foreground font-bold border border-border uppercase tracking-widest">
+                            ORIGEM: PLUGGY
+                          </span>
+                        )}
                       </div>
                       
                       <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
@@ -194,20 +199,26 @@ function ExpensesPageContent() {
                     </div>
                     
                     <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => { setEditExpenseId(exp.id); setIsModalOpen(true); }}
-                        className="p-2 bg-muted hover:bg-muted-foreground/20 text-foreground rounded-lg transition-colors"
-                        title="Editar Despesa"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteExpense(exp.id, !!exp.seriesId)}
-                        className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {!exp.isPluggyInstallment ? (
+                        <>
+                          <button 
+                            onClick={() => { setEditExpenseId(exp.id); setIsModalOpen(true); }}
+                            className="p-2 bg-muted hover:bg-muted-foreground/20 text-foreground rounded-lg transition-colors"
+                            title="Editar Despesa"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteExpense(exp.id, !!exp.seriesId)}
+                            className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground mr-2 italic">Automático</span>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -32,7 +32,53 @@ export async function GET(req: NextRequest) {
       orderBy: { dueDate: 'asc' }
     });
 
-    return NextResponse.json({ expenses });
+    const ccInstallments = await prisma.transaction.findMany({
+      where: {
+        date: { gte: startDate, lte: endDate },
+        creditCardId: { not: null },
+        totalInstallments: { gt: 1 },
+        isReconciled: false
+      },
+      include: {
+        categoryRelation: true
+      },
+      orderBy: { date: 'asc' }
+    });
+
+    const pseudoExpenses = ccInstallments.map(tx => {
+      // In Pluggy, expenses (purchases) are usually negative in balance but could be positive depending on interpretation.
+      // The transactions screen parses: const isCredit = tx.amount > 0;
+      // For credit cards, purchases are usually NEGATIVE amounts in Pluggy. Let's use Math.abs to be safe, or just take the amount since it's an expense.
+      const amount = Math.abs(tx.amount);
+      
+      return {
+        id: tx.id,
+        title: `${tx.originalDescription} (Parcela ${tx.installmentNumber || '?'}/${tx.totalInstallments})`,
+        amount: amount,
+        dueDate: tx.date,
+        competenceDate: tx.date,
+        categoryId: tx.categoryId,
+        category: tx.categoryRelation ? {
+          id: tx.categoryRelation.id,
+          name: tx.categoryRelation.name,
+          color: tx.categoryRelation.color,
+          icon: tx.categoryRelation.icon
+        } : null,
+        series: { type: 'INSTALLMENT' },
+        reconciliations: [],
+        isPluggyInstallment: true,
+        transactionData: {
+          originalCategory: tx.category,
+          cardNumber: tx.cardNumber
+        }
+      };
+    });
+
+    const combined = [...expenses, ...pseudoExpenses].sort((a, b) => {
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+
+    return NextResponse.json({ expenses: combined });
   } catch (error) {
     console.error("GET /api/expenses error:", error);
     return NextResponse.json({ error: "Failed to fetch expenses" }, { status: 500 });
