@@ -104,9 +104,9 @@ export function InvestmentsDashboard({ accounts }: { accounts: any[] }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* BIG COUNTER (Odômetro) */}
-        <div className="md:col-span-2 bg-[#0a0a0a] border border-emerald-500/20 rounded-3xl p-6 shadow-[0_0_40px_-15px_rgba(16,185,129,0.3)] relative overflow-hidden group">
+        <div className="md:col-span-2 bg-[#0a0a0a] border border-emerald-500/20 rounded-2xl p-5 shadow-[0_0_40px_-15px_rgba(16,185,129,0.3)] relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-cyan-400 to-emerald-500 bg-[length:200%_auto] animate-gradient-x"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-emerald-500/10 blur-[60px] rounded-full pointer-events-none"></div>
           
           <div className="relative z-10 flex flex-col justify-between h-full">
             <div>
@@ -122,20 +122,20 @@ export function InvestmentsDashboard({ accounts }: { accounts: any[] }) {
                 )}
               </div>
               
-              <div className="mt-4">
-                <h2 className="text-4xl md:text-5xl font-black tabular-nums tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70 flex items-baseline gap-1">
-                  <span className="text-2xl text-emerald-400/80 font-bold mr-1">R$</span>
+              <div className="mt-3">
+                <h2 className="text-3xl md:text-4xl font-black tabular-nums tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70 flex items-baseline gap-1">
+                  <span className="text-xl text-emerald-400/80 font-bold mr-1">R$</span>
                   {currentTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 }).replace("R$", "").trim()}
                 </h2>
-                <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1.5 opacity-80">
+                <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1.5 opacity-80">
                   <Info className="w-3 h-3" />
                   Simulando rendimento em tempo real baseado no valor base das contas.
                 </p>
               </div>
             </div>
 
-            <div className="mt-8">
-              <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-white/50 mb-2">
+            <div className="mt-5">
+              <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-white/50 mb-1.5">
                 <span>Progresso até a meta</span>
                 <span className="text-emerald-400">{progressPercentage.toFixed(1)}%</span>
               </div>
