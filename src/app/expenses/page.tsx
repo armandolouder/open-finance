@@ -50,7 +50,11 @@ function ExpensesPageContent() {
 
   // Combine and sort
   const allItems = [...data.transactions, ...(data.projections || [])]
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .sort((a, b) => {
+      const dateA = new Date(a.date || (a as any).projectedDate).getTime();
+      const dateB = new Date(b.date || (b as any).projectedDate).getTime();
+      return dateA - dateB;
+    });
 
   const bankItems = allItems.filter(t => !t.isCreditCard);
   const cardItems = allItems.filter(t => t.isCreditCard);
@@ -151,7 +155,7 @@ function ExpensesPageContent() {
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className={cn("text-xs font-medium", t.isProjected ? "text-amber-500/70" : "text-emerald-500")}>
                     {t.isProjected ? "Pendente" : "Pago"}
                   </p>
                 </div>
