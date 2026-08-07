@@ -13,6 +13,7 @@ const navGroups = [
     title: "CONTROLE",
     items: [
       { name: "Dashboard", href: "/", icon: LayoutDashboard },
+      { name: "Contas", href: "/accounts", icon: Landmark },
       { name: "Despesas", href: "/expenses", icon: Receipt },
       { name: "Transações", href: "/transactions", icon: ArrowRightLeft },
       { name: "Cartões", href: "/cards", icon: CreditCard },
