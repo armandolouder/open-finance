@@ -3,10 +3,10 @@ import { prisma } from "@/services/db";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
 
     // Achar a conciliação
     const reconciliation = await prisma.reconciliation.findUnique({

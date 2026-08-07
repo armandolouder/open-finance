@@ -3,7 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import {
-  ArrowDownLeft, ArrowUpRight, Search, CheckCircle2, CircleDashed, Tag
+  ArrowDownLeft, ArrowUpRight, Search, CheckCircle2, CircleDashed, Tag, RefreshCw
 } from "lucide-react";
 import { EditTransactionModal } from "@/components/transactions/EditTransactionModal";
 import { ReconciliationModal } from "@/components/transactions/ReconciliationModal";
