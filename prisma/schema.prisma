@@ -72,10 +72,10 @@ model Transaction {
   entityId            String?
   date                DateTime
   liquidationDate     DateTime?
-  originalDescription String
+  originalDescription String   @map("description")
   normalizedDescription String?
   amount              Float
-  type                String   // 'PIX_IN', 'PIX_OUT', 'TED', 'DOC', 'CREDIT_CARD', 'REFUND', 'IOF', 'INTEREST', 'FEE', 'INVESTMENT', 'REDEMPTION', 'TRANSFER', 'CASHBACK', 'BOLETO', 'DEPOSIT', 'WITHDRAWAL'
+  type                String   @default("OTHER") // 'PIX_IN', 'PIX_OUT', 'TED', 'DOC', 'CREDIT_CARD', 'REFUND', 'IOF', 'INTEREST', 'FEE', 'INVESTMENT', 'REDEMPTION', 'TRANSFER', 'CASHBACK', 'BOLETO', 'DEPOSIT', 'WITHDRAWAL'
   balance             Float?
   currency            String   @default("BRL")
   
