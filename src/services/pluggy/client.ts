@@ -79,21 +79,38 @@ export class CustomPluggyClient {
 
   async fetchTransactions(accountId: string) {
     let allTransactions: any[] = [];
-    let page = 1;
+    let after: string | null = null;
     const SAFETY_CAP = 2000; // evitar loop infinito
 
     do {
-      const params = new URLSearchParams({ accountId, page: String(page) });
+      const params = new URLSearchParams({ accountId });
+      if (after) {
+        params.set('after', after);
+      }
 
-      const data = await this.get(`/transactions?${params.toString()}`);
+      const data = await this.get(`/v2/transactions?${params.toString()}`);
       const results = data.results ?? [];
 
       allTransactions = allTransactions.concat(results);
       
-      if (results.length === 0 || data.page >= data.totalPages) {
+      const nextUrl = data.nextCursor ?? data.next ?? null;
+      let nextAfter: string | null = null;
+      if (nextUrl) {
+        try {
+          nextAfter = new URL(nextUrl, PLUGGY_API_URL).searchParams.get('after');
+        } catch (e) {
+          // Fallback se não for URL completa
+          if (nextUrl.includes('after=')) {
+            nextAfter = new URL('http://localhost' + (nextUrl.startsWith('/') ? nextUrl : '/' + nextUrl)).searchParams.get('after');
+          }
+        }
+      }
+      
+      if (!nextAfter || after === nextAfter) {
         break;
       }
-      page++;
+      
+      after = nextAfter;
 
     } while (allTransactions.length < SAFETY_CAP);
 
