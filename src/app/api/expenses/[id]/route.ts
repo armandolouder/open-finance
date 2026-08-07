@@ -26,6 +26,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await req.json();
+
+    if (id.startsWith('proj-')) {
+       const signature = id.replace('proj-', '');
+       await prisma.setting.upsert({
+         where: { key: `rename_${signature}` },
+         update: { value: body.title },
+         create: { key: `rename_${signature}`, value: body.title }
+       });
+       return NextResponse.json({ success: true });
+    }
+
     const {
       title, description, amount, dueDate, competenceDate,
       categoryId, subcategoryId, tags, supplier, costCenter, project,

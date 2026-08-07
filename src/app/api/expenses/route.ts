@@ -33,11 +33,21 @@ export async function GET(req: NextRequest) {
     });
 
     const settings = await prisma.setting.findMany({
-      where: { key: { startsWith: 'card_settings_' } }
+      where: { 
+        OR: [
+          { key: { startsWith: 'card_settings_' } },
+          { key: { startsWith: 'rename_' } }
+        ]
+      }
     });
     const cardSettings: Record<string, any> = {};
+    const renameSettings: Record<string, string> = {};
     for (const s of settings) {
-      try { cardSettings[s.key.replace('card_settings_', '')] = JSON.parse(s.value); } catch {}
+      if (s.key.startsWith('card_settings_')) {
+        try { cardSettings[s.key.replace('card_settings_', '')] = JSON.parse(s.value); } catch {}
+      } else if (s.key.startsWith('rename_')) {
+        renameSettings[s.key.replace('rename_', '')] = s.value;
+      }
     }
 
     const allInstallments = await prisma.transaction.findMany({
@@ -90,7 +100,7 @@ export async function GET(req: NextRequest) {
     }
 
     const pseudoExpenses = [];
-    for (const tx of purchaseGroups.values()) {
+    for (const [signature, tx] of purchaseGroups.entries()) {
       let closingDayNum = 25;
       const customConfig = cardSettings[tx.account?.externalId || ''] || {};
       
@@ -125,11 +135,12 @@ export async function GET(req: NextRequest) {
           continue; // Já foi conciliada neste mês exato
         }
 
-        const cleanDescForTitle = tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim();
+        const customName = renameSettings[signature];
+        const cleanDescForTitle = customName || tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim();
         const targetDate = monthDiff === 0 ? tx.date : new Date(year, month - 1, txDate.getDate());
 
         pseudoExpenses.push({
-          id: monthDiff === 0 ? tx.id : `proj-${tx.id}-${projectedInstallment}`,
+          id: `proj-${signature}`,
           title: `${cleanDescForTitle} (Parcela ${projectedInstallment}/${tx.totalInstallments})`,
           amount: Math.abs(tx.amount),
           dueDate: targetDate,

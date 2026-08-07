@@ -55,6 +55,22 @@ function ExpensesPageContent() {
     }
   };
 
+  const handleRenameInstallment = async (exp: any) => {
+    const cleanTitle = exp.title.replace(/\s*\(Parcela.*\)$/, '');
+    const newName = prompt("Como você quer chamar este parcelamento? (Este nome será salvo para todas as parcelas atuais e futuras desta compra)", cleanTitle);
+    if (!newName || newName === cleanTitle) return;
+    try {
+      await fetch(`/api/expenses/${exp.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newName })
+      });
+      mutateExpenses();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handlePrevMonth = () => {
     const [y, m] = month.split("-").map(Number);
     const prev = new Date(y, m - 2, 1);
@@ -218,7 +234,16 @@ function ExpensesPageContent() {
                           </button>
                         </>
                       ) : (
-                        <span className="text-xs text-muted-foreground mr-2 italic">Automático</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground italic mr-2">Automático</span>
+                          <button 
+                            onClick={() => handleRenameInstallment(exp)}
+                            className="p-2 bg-muted hover:bg-muted-foreground/20 text-foreground rounded-lg transition-colors"
+                            title="Renomear Parcelamento"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
