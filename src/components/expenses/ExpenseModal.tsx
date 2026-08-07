@@ -98,8 +98,10 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
 
       fetch("/api/accounts").then(res => res.json()).then(data => {
         if (data.accounts) {
-          setAccounts(data.accounts.filter((a: any) => a.type === 'BANK'));
-          setCards(data.accounts.filter((a: any) => a.type === 'CREDIT'));
+          // Filtra para mostrar apenas as contas que o usuário renomeou explicitamente
+          const namedAccounts = data.accounts.filter((a: any) => a.hasCustomName);
+          setAccounts(namedAccounts.filter((a: any) => a.type === 'BANK'));
+          setCards(namedAccounts.filter((a: any) => a.type === 'CREDIT'));
         }
       }).catch(console.error);
     }

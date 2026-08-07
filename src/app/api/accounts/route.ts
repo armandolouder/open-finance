@@ -9,16 +9,23 @@ export async function GET() {
       where: { 
         OR: [
           { key: { startsWith: 'item_name_' } },
+          { key: { startsWith: 'account_label_' } },
           { key: 'account_order' }
         ]
       }
     });
     const customItemNames: Record<string, string> = {};
+    const accountLabels: Record<string, { customName?: string, entityType?: string }> = {};
     let accountOrder: string[] = [];
     
     for (const s of settings) {
       if (s.key === 'account_order') {
         try { accountOrder = JSON.parse(s.value); } catch {}
+      } else if (s.key.startsWith('account_label_')) {
+        try {
+          const accountId = s.key.replace('account_label_', '');
+          accountLabels[accountId] = JSON.parse(s.value);
+        } catch {}
       } else {
         customItemNames[s.key.replace('item_name_', '')] = s.value;
       }
@@ -63,14 +70,18 @@ export async function GET() {
       }
 
       const creditData = account.creditCards ? account.creditCards[0] : null;
+      const label = accountLabels[account.id];
+      const customName = label?.customName;
 
       allAccounts.push({
-        id: account.externalId,
+        id: account.externalId, // keeping externalId as id for backward compatibility
+        dbId: account.id, // the actual internal db id
         itemId,
         institutionName,
         institutionLogo: null, 
-        name: account.name,
-        number: '', // not stored
+        name: customName || account.name,
+        originalName: account.name,
+        hasCustomName: !!customName,
         type: account.type,
         subtype: account.subtype,
         connectionStatus: account.connection.status,
