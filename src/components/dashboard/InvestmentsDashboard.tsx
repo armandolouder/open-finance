@@ -22,7 +22,7 @@ export function InvestmentsDashboard({ accounts }: { accounts: any[] }) {
   
   // State for gamification settings
   const [goal, setGoal] = useState(1000000);
-  const [annualRate, setAnnualRate] = useState(15);
+  const [annualRate, setAnnualRate] = useState(12.0);
   
   // Odometer state
   const [currentTotal, setCurrentTotal] = useState(investTotal);
@@ -30,7 +30,7 @@ export function InvestmentsDashboard({ accounts }: { accounts: any[] }) {
   // Settings modal
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [tempGoal, setTempGoal] = useState(1000000);
-  const [tempRate, setTempRate] = useState(15);
+  const [tempRate, setTempRate] = useState(12.0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -251,7 +251,7 @@ export function InvestmentsDashboard({ accounts }: { accounts: any[] }) {
                     onChange={e => setTempRate(Number(e.target.value))}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">Quanto maior, mais rápido o contador vai girar. Zero para desativar.</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Dica: 115% do CDI equivale a aproximadamente 12.0% ao ano.</p>
                 </div>
               </div>
               
