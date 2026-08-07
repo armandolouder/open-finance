@@ -31,6 +31,7 @@ const navGroups = [
   {
     title: "ORGANIZAÇÃO",
     items: [
+      { name: "Categorias", href: "/categories", icon: Tag },
       { name: "Sincronização", href: "/sync", icon: RefreshCw },
       { name: "Configurações", href: "/settings", icon: Settings },
     ]
