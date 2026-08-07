@@ -32,12 +32,10 @@ export async function GET(req: NextRequest) {
       orderBy: { dueDate: 'asc' }
     });
 
-    const ccInstallments = await prisma.transaction.findMany({
+    const allInstallments = await prisma.transaction.findMany({
       where: {
-        date: { gte: startDate, lte: endDate },
         creditCardId: { not: null },
-        totalInstallments: { gt: 1 },
-        isReconciled: false
+        totalInstallments: { gt: 1 }
       },
       include: {
         categoryRelation: true
@@ -45,33 +43,56 @@ export async function GET(req: NextRequest) {
       orderBy: { date: 'asc' }
     });
 
-    const pseudoExpenses = ccInstallments.map(tx => {
-      // In Pluggy, expenses (purchases) are usually negative in balance but could be positive depending on interpretation.
-      // The transactions screen parses: const isCredit = tx.amount > 0;
-      // For credit cards, purchases are usually NEGATIVE amounts in Pluggy. Let's use Math.abs to be safe, or just take the amount since it's an expense.
-      const amount = Math.abs(tx.amount);
+    const purchaseGroups = new Map<string, typeof allInstallments[0]>();
+    for (const tx of allInstallments) {
+      const cleanDesc = tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim().substring(0, 20).toLowerCase();
+      const signature = `${tx.creditCardId}-${cleanDesc}-${tx.totalInstallments}-${Math.abs(tx.amount)}`;
       
-      return {
-        id: tx.id,
-        title: `${tx.originalDescription} (Parcela ${tx.installmentNumber || '?'}/${tx.totalInstallments})`,
-        amount: amount,
-        dueDate: tx.date,
-        competenceDate: tx.date,
-        categoryId: tx.categoryId,
-        category: tx.categoryRelation ? {
-          id: tx.categoryRelation.id,
-          name: tx.categoryRelation.name,
-          color: tx.categoryRelation.color
-        } : null,
-        series: { type: 'INSTALLMENT' },
-        reconciliations: [],
-        isPluggyInstallment: true,
-        transactionData: {
-          originalCategory: tx.category,
-          cardNumber: tx.cardNumber
+      const existing = purchaseGroups.get(signature);
+      if (!existing || (tx.installmentNumber || 0) > (existing.installmentNumber || 0)) {
+        purchaseGroups.set(signature, tx);
+      }
+    }
+
+    const pseudoExpenses = [];
+    for (const tx of purchaseGroups.values()) {
+      const txDate = new Date(tx.date);
+      const txYear = txDate.getFullYear();
+      const txMonth = txDate.getMonth() + 1;
+      
+      const monthDiff = (year - txYear) * 12 + (month - txMonth);
+      const projectedInstallment = (tx.installmentNumber || 1) + monthDiff;
+
+      if (projectedInstallment > 0 && projectedInstallment <= (tx.totalInstallments || 1)) {
+        if (monthDiff === 0 && tx.isReconciled) {
+          continue; // Já foi conciliada neste mês exato
         }
-      };
-    });
+
+        const cleanDescForTitle = tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim();
+        const targetDate = monthDiff === 0 ? tx.date : new Date(year, month - 1, txDate.getDate());
+
+        pseudoExpenses.push({
+          id: monthDiff === 0 ? tx.id : `proj-${tx.id}-${projectedInstallment}`,
+          title: `${cleanDescForTitle} (Parcela ${projectedInstallment}/${tx.totalInstallments})`,
+          amount: Math.abs(tx.amount),
+          dueDate: targetDate,
+          competenceDate: targetDate,
+          categoryId: tx.categoryId,
+          category: tx.categoryRelation ? {
+            id: tx.categoryRelation.id,
+            name: tx.categoryRelation.name,
+            color: tx.categoryRelation.color
+          } : null,
+          series: { type: 'INSTALLMENT' },
+          reconciliations: [],
+          isPluggyInstallment: true,
+          transactionData: {
+            originalCategory: tx.category,
+            cardNumber: tx.cardNumber
+          }
+        });
+      }
+    }
 
     const combined = [...expenses, ...pseudoExpenses].sort((a, b) => {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
