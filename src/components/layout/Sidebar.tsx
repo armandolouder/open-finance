@@ -12,27 +12,21 @@ const navGroups = [
   {
     title: "CONTROLE",
     items: [
+      { name: "Insights", href: "/investments/insights", icon: Sparkles },
       { name: "Dashboard", href: "/", icon: LayoutDashboard },
+      { name: "Despesas", href: "/expenses", icon: Receipt },
       { name: "Transações", href: "/transactions", icon: ArrowRightLeft },
-      { name: "Contas", href: "/accounts", icon: Landmark },
       { name: "Cartões", href: "/cards", icon: CreditCard },
-      { name: "Categorias", href: "/categories", icon: Tag },
+      { name: "Investimentos", href: "/investments", icon: TrendingUp },
     ]
   },
   {
     title: "ORGANIZAÇÃO",
     items: [
-      { name: "Faturas", href: "/bills", icon: Receipt },
-      { name: "Despesas", href: "/expenses", icon: Receipt },
-      { name: "Investimentos", href: "/investments", icon: TrendingUp },
-      { name: "Insights", href: "/investments/insights", icon: Sparkles },
       { name: "Sincronização", href: "/sync", icon: RefreshCw },
+      { name: "Configurações", href: "/settings", icon: Settings },
     ]
   }
-];
-
-const bottomItems = [
-  { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -82,34 +76,6 @@ export function Sidebar() {
             </ul>
           </div>
         ))}
-        
-        <div className="px-4 border-t border-sidebar-border/20 pt-6 mt-4">
-          <ul className="space-y-1">
-            {bottomItems.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "group flex items-center gap-3 px-4 py-2.5 rounded-full text-[14px] transition-all duration-300 relative overflow-hidden",
-                      isActive 
-                        ? "text-sidebar-primary-foreground bg-sidebar-primary font-semibold shadow-sm" 
-                        : "text-sidebar-foreground hover:text-white hover:bg-white/5 font-medium"
-                    )}
-                  >
-                    <Icon className={cn(
-                      "w-4 h-4 transition-transform duration-300 group-hover:scale-110",
-                      isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground group-hover:text-white"
-                    )} />
-                    {item.name}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
       </nav>
 
       <div className="p-6 border-t border-sidebar-border shrink-0">
