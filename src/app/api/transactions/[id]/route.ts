@@ -12,7 +12,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         categoryId: body.categoryId || null,
         subcategoryId: body.subcategoryId || null,
         tags: body.tags || null,
-        ignoreInReports: body.ignoreInReports ?? false,
       },
     });
 

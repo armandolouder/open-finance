@@ -1,27 +1,28 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-  ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus, TrendingDown, Edit2, Trash2
+  ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus, TrendingDown, Edit2, Trash2, Tag, CreditCard as CardIcon, Building, Briefcase
 } from "lucide-react";
 import useSWR from "swr";
 import { cn, monthKey, monthLabel } from "@/lib/utils";
 import { ExpenseModal } from "@/components/expenses/ExpenseModal";
-import { EditTransactionModal } from "@/components/transactions/EditTransactionModal";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-interface Transaction {
+interface Expense {
   id: string;
-  description: string;
+  seriesId: string | null;
+  title: string;
+  description: string | null;
   amount: number;
-  date: string;
-  isProjected?: boolean;
-  installmentNumber?: number;
-  totalInstallments?: number;
-  isCreditCard?: boolean;
-  isIgnored?: boolean;
+  dueDate: string;
+  installmentNum: number | null;
+  category?: { name: string, color: string };
+  series?: { type: string, installments: number | null };
+  paymentMethod: string | null;
+  reconciliations: any[];
 }
 
 function ExpensesPageContent() {
@@ -29,48 +30,48 @@ function ExpensesPageContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get("month") || monthKey(new Date());
   
-  const { data: expensesData, mutate: mutateExpenses, isLoading: loadingExpenses } = useSWR(`/api/expenses?month=${month}`, fetcher);
-  const { data: cardsData, mutate: mutateCards, isLoading: loadingCards } = useSWR(`/api/cards?month=${month}`, fetcher);
+  const { data: expensesData, mutate: mutateExpenses, isLoading: loading } = useSWR(`/api/expenses?month=${month}`, fetcher);
 
-  const loading = loadingExpenses || loadingCards;
-  const data = expensesData && !expensesData.error ? expensesData : { transactions: [], projections: [] };
-  const realCardTotal = cardsData?.cards?.reduce((sum: number, card: any) => sum + (card.bills?.[0]?.total || 0), 0) || 0;
+  const expenses: Expense[] = expensesData?.expenses || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
-  const [editTransactionItem, setEditTransactionItem] = useState<any | null>(null);
 
-  const handleDeleteExpense = async (id: string) => {
-    if (!confirm("Tem certeza que deseja apagar esta despesa recorrente?")) return;
+  const handleDeleteExpense = async (id: string, hasSeries: boolean) => {
+    let mode = 'SINGLE';
+    if (hasSeries) {
+      const resp = confirm("Esta despesa faz parte de uma série. Deseja excluir TODA a série? (Cancelar exclui apenas esta ocorrência)");
+      mode = resp ? 'ALL' : 'SINGLE';
+    } else {
+      if (!confirm("Tem certeza que deseja apagar esta despesa?")) return;
+    }
+
     try {
-      await fetch(`/api/expenses/recurring/${id}`, { method: "DELETE" });
+      await fetch(`/api/expenses/${id}?mode=${mode}`, { method: "DELETE" });
       mutateExpenses();
     } catch (e) {
       console.error(e);
     }
   };
 
-  // Combine and sort
-  const allItems = [...data.transactions, ...(data.projections || [])]
-    .sort((a, b) => {
-      const dateA = new Date(a.date || (a as any).projectedDate).getTime();
-      const dateB = new Date(b.date || (b as any).projectedDate).getTime();
-      return dateA - dateB;
-    });
+  const handlePrevMonth = () => {
+    const [y, m] = month.split("-").map(Number);
+    const prev = new Date(y, m - 2, 1);
+    router.push(`/expenses?month=${monthKey(prev)}`);
+  };
 
-  const bankItems = allItems.filter(t => !t.isCreditCard);
-  const cardItems = allItems.filter(t => t.isCreditCard);
+  const handleNextMonth = () => {
+    const [y, m] = month.split("-").map(Number);
+    const next = new Date(y, m, 1);
+    router.push(`/expenses?month=${monthKey(next)}`);
+  };
 
-  const activeItems = allItems.filter(t => !t.isIgnored);
-  const activeBankItems = bankItems.filter(t => !t.isIgnored);
-
-  // "somente os cadastros manuais"
-  const manualItems = allItems.filter(t => t.isProjected && t.id && !t.id.toString().startsWith('proj_'));
-  const totalRecorrentes = manualItems.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  
-  // "card cartoes + card recorrentes = total mensal"
-  const totalMensal = realCardTotal + totalRecorrentes;
-  const pending = manualItems.filter(t => !t.isIgnored).reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  // KPIs
+  const totalAmount = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+  const paidAmount = expenses
+    .filter(exp => exp.reconciliations?.length > 0)
+    .reduce((acc, exp) => acc + exp.amount, 0); // simplificado, ideal é somar as reconciliações
+  const pendingAmount = totalAmount - paidAmount;
 
   return (
     <div className="space-y-6">
@@ -81,136 +82,146 @@ function ExpensesPageContent() {
             <span className="text-emerald-500">
               <Calendar className="w-6 h-6" />
             </span>
-            Despesas
+            Planejamento & Despesas
           </h1>
-          <p className="text-muted-foreground text-sm">Gestão de despesas mensais e únicas com categorias</p>
+          <p className="text-muted-foreground text-sm">Controle seus compromissos e planeje seu mês</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setEditExpenseId(null); setIsModalOpen(true); }}
           className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 font-medium transition-colors"
         >
           <Plus className="w-4 h-4" /> Nova Despesa
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground mb-1">Total Mensal</p>
-          <p className="text-2xl font-bold">R$ {totalMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-muted-foreground mt-2">Soma geral do mês</p>
+      {/* Month Navigator & Summary */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card border border-border p-4 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-4">
+          <button onClick={handlePrevMonth} className="p-2 hover:bg-muted rounded-full transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+          <h2 className="text-lg font-bold min-w-[150px] text-center capitalize">{monthLabel(month)}</h2>
+          <button onClick={handleNextMonth} className="p-2 hover:bg-muted rounded-full transition-colors"><ChevronRight className="w-5 h-5" /></button>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute right-0 top-0 w-16 h-16 bg-blue-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
-          <p className="text-sm text-muted-foreground mb-1">Cartões</p>
-          <p className="text-2xl font-bold">R$ {realCardTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Check className="w-3 h-3 text-blue-500" /> Vencimento no mês
-          </p>
-        </div>
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute right-0 top-0 w-16 h-16 bg-amber-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
-          <p className="text-sm text-muted-foreground mb-1">Recorrentes (Manuais)</p>
-          <p className="text-2xl font-bold">R$ {totalRecorrentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Clock className="w-3 h-3 text-amber-500" /> {manualItems.length} cadastradas
-          </p>
-        </div>
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground mb-1">Pago a mais</p>
-          <p className="text-2xl font-bold">R$ 0,00</p>
-          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3 text-red-500" /> dentro do previsto
-          </p>
+        
+        <div className="flex gap-8 text-right">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Total Planejado</p>
+            <p className="font-mono text-lg font-bold text-foreground">R$ {totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Total Pago</p>
+            <p className="font-mono text-lg font-bold text-emerald-500">R$ {paidAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Restante</p>
+            <p className="font-mono text-lg font-bold text-amber-500">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
         </div>
       </div>
 
-
-      {/* Expenses List */}
+      {/* List */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-border bg-muted/20 flex justify-between items-center">
+        <div className="px-6 py-4 border-b border-border bg-muted/20">
           <h2 className="font-semibold text-sm flex items-center gap-2">
             <span className="text-emerald-500"><TrendingDown className="w-4 h-4" /></span>
-            Despesas Mensais ({allItems.length})
+            Despesas do Mês ({expenses.length})
           </h2>
         </div>
+        
         <div className="divide-y divide-border">
           {loading ? (
             <div className="p-8 text-center text-muted-foreground">Carregando...</div>
-          ) : allItems.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">Nenhuma despesa este mês.</div>
+          ) : expenses.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground flex flex-col items-center">
+              <Calendar className="w-12 h-12 text-muted mb-3" />
+              <p>Nenhuma despesa planejada para este mês.</p>
+              <button 
+                onClick={() => { setEditExpenseId(null); setIsModalOpen(true); }}
+                className="mt-4 text-emerald-500 hover:underline text-sm"
+              >
+                Criar primeira despesa
+              </button>
+            </div>
           ) : (
-            allItems.map((t, i) => {
-              const isActualTransaction = !t.isProjected;
+            expenses.map((exp) => {
+              const isPaid = exp.reconciliations && exp.reconciliations.length > 0;
+              const isInstallment = exp.series?.type === 'INSTALLMENT';
+              
               return (
-                <div 
-                  key={i} 
-                  onClick={() => isActualTransaction ? setEditTransactionItem(t) : null}
-                  className={cn(
-                    "flex items-center gap-4 p-4 transition-colors",
-                    isActualTransaction ? "cursor-pointer hover:bg-accent/50" : "hover:bg-accent/30"
-                  )}
-                >
-                  <div className="w-12 h-12 rounded-xl bg-muted/30 flex flex-col items-center justify-center shrink-0">
-                  <span className="text-[10px] text-muted-foreground uppercase leading-none mb-1">Dia</span>
-                  <span className="font-bold text-foreground leading-none">
-                    {new Date(t.date || (t as any).projectedDate).getDate()}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate flex items-center gap-2">
-                    {((t as any).title || t.description).replace(/\s*\d+\/\d+\s*$/, '').trim()}
-                    {t.installmentNumber && t.totalInstallments && (
-                      <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-semibold">
-                        {t.installmentNumber}/{t.totalInstallments}
-                      </span>
-                    )}
-                  </p>
-                  <p className={cn("text-xs font-medium", t.isProjected ? "text-amber-500/70" : "text-emerald-500")}>
-                    {t.isProjected ? "Pendente" : "Pago"}
-                  </p>
-                </div>
-                <div className="text-right flex items-center gap-4">
-                  <p className="font-bold text-foreground">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                  
-                  {t.isProjected && t.id && !t.id.startsWith('proj_') && (
-                    <div className="flex gap-2">
+                <div key={exp.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 hover:bg-muted/30 transition-colors group">
+                  <div className="flex-1 flex items-start gap-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm",
+                      isPaid ? "bg-emerald-500/10 text-emerald-500" : "bg-border/50 text-muted-foreground"
+                    )}>
+                      {isPaid ? <Check className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-foreground">{exp.title}</p>
+                        {isInstallment && exp.installmentNum && exp.series?.installments && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium border border-amber-500/20">
+                            {exp.installmentNum}/{exp.series.installments}
+                          </span>
+                        )}
+                        {exp.series?.type === 'RECURRING' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 font-medium border border-blue-500/20">
+                            Recorrente
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> {new Date(exp.dueDate).toLocaleDateString('pt-BR')}
+                        </span>
+                        {exp.category && (
+                          <span className="flex items-center gap-1">
+                            <Tag className="w-3 h-3" /> {exp.category.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-6 sm:w-1/3">
+                    <div className="text-left sm:text-right">
+                      <p className={cn("font-mono font-bold text-lg", isPaid ? "text-emerald-500" : "text-foreground")}>
+                        R$ {exp.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
+                        {isPaid ? "Pago" : "Pendente"}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => { setEditExpenseId(t.id); setIsModalOpen(true); }}
-                        className="p-1.5 rounded-md hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
-                        title="Editar"
+                        onClick={() => { setEditExpenseId(exp.id); setIsModalOpen(true); }}
+                        className="p-2 bg-muted hover:bg-muted-foreground/20 text-foreground rounded-lg transition-colors"
+                        title="Editar Despesa"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDeleteExpense(t.id)}
-                        className="p-1.5 rounded-md hover:bg-white/10 text-muted-foreground hover:text-red-400 transition-colors"
+                        onClick={() => handleDeleteExpense(exp.id, !!exp.seriesId)}
+                        className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
               );
             })
           )}
         </div>
       </div>
-      
+
       <ExpenseModal 
         isOpen={isModalOpen} 
-        onClose={() => { setIsModalOpen(false); setEditExpenseId(null); }} 
-        onSaved={() => { setIsModalOpen(false); setEditExpenseId(null); mutateExpenses(); }} 
+        onClose={() => setIsModalOpen(false)} 
+        onSaved={mutateExpenses}
         expenseId={editExpenseId}
-      />
-
-      <EditTransactionModal 
-        isOpen={!!editTransactionItem} 
-        onClose={() => setEditTransactionItem(null)} 
-        onSaved={() => { setEditTransactionItem(null); mutateExpenses(); }} 
-        transaction={editTransactionItem} 
       />
     </div>
   );
@@ -218,7 +229,7 @@ function ExpensesPageContent() {
 
 export default function ExpensesPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando visualização...</div>}>
       <ExpensesPageContent />
     </Suspense>
   );

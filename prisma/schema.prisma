@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Entity {
@@ -55,55 +55,62 @@ model Account {
   updatedAt        DateTime @updatedAt
 
   connection   Connection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  entity       Entity?       @relation(fields: [entityId], references: [id])
-  transactions Transaction[]
-  creditCards  CreditCard[]
-  recurringExpenses RecurringExpense[]
+  entity        Entity?         @relation(fields: [entityId], references: [id])
+  transactions  Transaction[]
+  creditCards   CreditCard[]
+  expenses      Expense[]
+  expenseSeries ExpenseSeries[]
 
   @@index([connectionId])
 }
 
 model Transaction {
-  id               String   @id @default(uuid())
-  externalId       String?  @unique
-  accountId        String
-  entityId         String?
-  date             DateTime
-  description      String
-  amount           Float
-  direction        String   // 'CREDIT' | 'DEBIT'
-  category         String?
-  originalCategory String?
-  customCategory   String?
-  status           String?
-  classification   String?  // 'PERSONAL' | 'BUSINESS' | 'IGNORED'
-  notes            String?
+  id                  String   @id @default(uuid())
+  externalId          String?  @unique // ID do Pluggy
+  accountId           String?
+  creditCardId        String?
+  entityId            String?
+  date                DateTime
+  liquidationDate     DateTime?
+  originalDescription String
+  normalizedDescription String?
+  amount              Float
+  type                String   // 'PIX_IN', 'PIX_OUT', 'TED', 'DOC', 'CREDIT_CARD', 'REFUND', 'IOF', 'INTEREST', 'FEE', 'INVESTMENT', 'REDEMPTION', 'TRANSFER', 'CASHBACK', 'BOLETO', 'DEPOSIT', 'WITHDRAWAL'
+  balance             Float?
+  currency            String   @default("BRL")
   
-  // Manual / Recurring fields
-  isManual         Boolean  @default(false)
-  recurringExpenseId String?
+  // Categorização (Compartilhada)
+  categoryId          String?
+  subcategoryId       String?
+  tags                String?
   
-  categoryId       String?
-  subcategoryId    String?
-  tags             String?
-  ignoreInReports  Boolean  @default(false)
+  isReconciled        Boolean  @default(false)
+  origin              String   @default("OPEN_FINANCE") // 'OPEN_FINANCE', 'MANUAL', 'CSV'
+  notes               String?
+  status              String?
 
-  // Credit Card Metadata
-  billForecastDate String?  // e.g. "2026-08"
-  purchaseDate     DateTime?
-  totalInstallments Int?
-  installmentNumber Int?
-  cardNumber       String?
-  pluggyUpdatedAt  DateTime? // When Pluggy last returned this transaction
+  // Pluggy fields para não quebrar a importação inicial
+  category            String?
+  originalCategory    String?
+  classification      String?
+  billForecastDate    String?
+  purchaseDate        DateTime?
+  totalInstallments   Int?
+  installmentNumber   Int?
+  cardNumber          String?
+  pluggyUpdatedAt     DateTime?
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  account          Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  entity           Entity? @relation(fields: [entityId], references: [id])
-  recurringExpense RecurringExpense? @relation(fields: [recurringExpenseId], references: [id])
-  categoryRelation Category? @relation("TransactionCategory", fields: [categoryId], references: [id])
-  subcategoryRelation Category? @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
+  account             Account?    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  creditCard          CreditCard? @relation(fields: [creditCardId], references: [id])
+  entity              Entity?     @relation(fields: [entityId], references: [id])
+  
+  categoryRelation    Category?   @relation("TransactionCategory", fields: [categoryId], references: [id])
+  subcategoryRelation Category?   @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
+  
+  reconciliations     Reconciliation[]
 
   @@index([accountId])
   @@index([date])
@@ -125,10 +132,12 @@ model CreditCard {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  account Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  entity  Entity?          @relation(fields: [entityId], references: [id])
-  bills   CreditCardBill[]
-  recurringExpenses RecurringExpense[]
+  account       Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  entity        Entity?          @relation(fields: [entityId], references: [id])
+  bills         CreditCardBill[]
+  transactions  Transaction[]
+  expenses      Expense[]
+  expenseSeries ExpenseSeries[]
 }
 
 model CreditCardBill {
@@ -213,9 +222,15 @@ model Category {
 
   rules     TransactionRule[]
   overrides TransactionOverride[]
-  recurringExpenses RecurringExpense[]
-  transactions        Transaction[] @relation("TransactionCategory")
-  subtransactions     Transaction[] @relation("TransactionSubcategory")
+  
+  transactions    Transaction[] @relation("TransactionCategory")
+  subtransactions Transaction[] @relation("TransactionSubcategory")
+  
+  expenses        Expense[]     @relation("ExpenseCategory")
+  subexpenses     Expense[]     @relation("ExpenseSubcategory")
+  
+  series          ExpenseSeries[] @relation("SeriesCategory")
+  subseries       ExpenseSeries[] @relation("SeriesSubcategory")
 }
 
 model TransactionRule {
@@ -235,30 +250,93 @@ model TransactionOverride {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
-model RecurringExpense {
+model ExpenseSeries {
   id              String   @id @default(uuid())
+  type            String   // 'RECURRING', 'INSTALLMENT'
   title           String
   description     String?
-  amount          Float
-  type            String   // 'EXPENSE' | 'INCOME'
-  frequency       String   // 'MONTHLY', 'YEARLY', 'INSTALLMENT'
+  baseAmount      Float?   
+  totalAmount     Float?   // Para parcelamentos
+  installments    Int?
+  frequency       String?  // 'MONTHLY', 'WEEKLY', 'YEARLY', 'CUSTOM'
   startDate       DateTime
   endDate         DateTime?
-  dayOfMonth      Int?
+  
+  // Configuração Padrão da Série
+  categoryId      String?
+  subcategoryId   String?
+  tags            String?
+  supplier        String?
+  costCenter      String?
+  project         String?
+  
+  paymentMethod   String?
   accountId       String?
   creditCardId    String?
-  categoryId      String?
-  status          String   @default("ACTIVE") // 'ACTIVE' | 'CANCELLED'
-  totalInstallments Int?
-  tags            String?  // JSON or comma separated
-  isVariable      Boolean  @default(false)
-  matchPattern    String?  // e.g., "ENEL, ELETROPAULO"
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
+  
   account         Account?    @relation(fields: [accountId], references: [id])
   creditCard      CreditCard? @relation(fields: [creditCardId], references: [id])
-  category        Category?   @relation(fields: [categoryId], references: [id])
-  transactions    Transaction[]
+  
+  category        Category?   @relation("SeriesCategory", fields: [categoryId], references: [id])
+  subcategory     Category?   @relation("SeriesSubcategory", fields: [subcategoryId], references: [id])
+  
+  expenses        Expense[]
+}
+
+model Expense {
+  id              String   @id @default(uuid())
+  seriesId        String?  // Nulo se for despesa ÚNICA
+  
+  title           String
+  description     String?
+  amount          Float
+  
+  dueDate         DateTime
+  competenceDate  DateTime?
+  
+  installmentNum  Int?     // Ex: 1 (de 12)
+  
+  // Categorização
+  categoryId      String?
+  subcategoryId   String?
+  tags            String?
+  supplier        String?
+  costCenter      String?
+  project         String?
+  
+  // Pagamento
+  paymentMethod   String?
+  accountId       String?
+  creditCardId    String?
+  
+  notes           String?
+  attachments     String?  // JSON ou URL
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  account         Account?    @relation(fields: [accountId], references: [id])
+  creditCard      CreditCard? @relation(fields: [creditCardId], references: [id])
+  
+  series          ExpenseSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  category        Category?      @relation("ExpenseCategory", fields: [categoryId], references: [id])
+  subcategory     Category?      @relation("ExpenseSubcategory", fields: [subcategoryId], references: [id])
+  
+  reconciliations Reconciliation[]
+}
+
+model Reconciliation {
+  id              String   @id @default(uuid())
+  transactionId   String
+  expenseId       String
+  amount          Float    // Quanto dessa transação pagou essa despesa
+  createdAt       DateTime @default(now())
+  
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  expense         Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  
+  @@unique([transactionId, expenseId])
 }

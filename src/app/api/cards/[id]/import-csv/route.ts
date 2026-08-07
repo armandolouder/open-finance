@@ -191,7 +191,7 @@ export async function POST(
       include: {
         transactions: {
           where: { date: { gte: csvMinDate, lte: csvMaxDate } },
-          select: { date: true, amount: true, description: true, externalId: true },
+          select: { date: true, amount: true, originalDescription: true, externalId: true },
         }
       }
     });
@@ -242,8 +242,8 @@ export async function POST(
       .map(t => ({
         date: t.date,
         amount: t.amount,
-        description: t.description,
-        normDescription: normalizeDescription(t.description),
+        description: t.originalDescription,
+        normDescription: normalizeDescription(t.originalDescription),
         externalId: t.externalId,
       }));
 
@@ -273,7 +273,7 @@ export async function POST(
         // Transações ausentes
         missingTransactions: missing.map(t => ({
           date: t.date,
-          description: t.description,
+          originalDescription: t.description,
           amount: t.amount,
           type: t.type,
           hash: t.hash,
@@ -305,12 +305,12 @@ export async function POST(
           externalId: csvExternalId,
           accountId: account.id,
           date: new Date(tx.date + 'T12:00:00'),
-          description: tx.description,
+          originalDescription: tx.description,
           amount: Math.abs(tx.amount),
-          direction: tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT',
+          type: tx.categoryId || (tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT'),
           category: tx.category || null,
           originalCategory: tx.originalCategory || tx.category || null,
-          isManual: true,
+          origin: 'CSV',
           notes: 'Importado via CSV Nubank',
         },
       });

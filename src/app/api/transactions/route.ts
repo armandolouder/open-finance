@@ -55,20 +55,20 @@ export async function GET(request: NextRequest) {
         allTransactions.push({
           id: t.id,
           externalId: t.externalId,
-          description: t.description,
+          description: t.originalDescription,
           amount: t.amount,
           date: t.date.toISOString(),
-          type: t.direction,
-          category: t.category,
+          type: (t.amount > 0 ? 'CREDIT' : 'DEBIT'),
+          transactionType: t.type,
           categoryId: t.categoryId,
           subcategoryId: t.subcategoryId,
           categoryName: t.categoryRelation?.name || null,
           subcategoryName: t.subcategoryRelation?.name || null,
           tags: t.tags || "",
-          ignoreInReports: t.ignoreInReports,
+          isReconciled: t.isReconciled,
           accountName: accSettings.customName || account.name,
           accountId: account.externalId,
-          balance: null, 
+          balance: t.balance, 
         });
       }
     }

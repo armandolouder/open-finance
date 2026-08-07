@@ -174,7 +174,7 @@ export async function GET(request: Request) {
         const seen = new Set();
         for (const tx of monthTxns) {
           const dayKey = tx.date.toISOString().slice(0, 10);
-          const key = `${dayKey}_${tx.amount}_${(tx.description || '').trim()}`;
+          const key = `${dayKey}_${tx.amount}_${(tx.originalDescription || '').trim()}`;
           if (!seen.has(key)) {
             seen.add(key);
             uniqueTxns.push(tx);
@@ -192,7 +192,7 @@ export async function GET(request: Request) {
               const pDate = typeof tx.purchaseDate === 'string' ? tx.purchaseDate : tx.purchaseDate.toISOString();
               key = `${pDate.slice(0, 10)}_${roundedAmount}_${tx.totalInstallments}`;
             } else {
-              const cleanDesc = tx.description.replace(/\s*(?:-\s*)?(?:PARC\.?\s*)?\(?\d{1,2}\/\d{1,2}\)?$/i, '').trim();
+              const cleanDesc = tx.originalDescription.replace(/\s*(?:-\s*)?(?:PARC\.?\s*)?\(?\d{1,2}\/\d{1,2}\)?$/i, '').trim();
               key = `${cleanDesc}_${roundedAmount}_${tx.totalInstallments}`;
             }
             if (!instGroups.has(key) || tx.installmentNumber > instGroups.get(key).installmentNumber) {
@@ -221,7 +221,7 @@ export async function GET(request: Request) {
 
         for (const tx of uniqueTxns) {
 
-          const desc = (tx.description || '').toLowerCase();
+          const desc = (tx.originalDescription || '').toLowerCase();
           
           // Ignore credit card payments
           if (tx.category === 'Credit card payment' || desc.includes('pagamento recebido') || desc.includes('pagamento de fatura') || desc.includes('fatura paga')) {
@@ -262,7 +262,7 @@ export async function GET(request: Request) {
           
           allRecentTransactions.push({
             id: tx.externalId,
-            description: tx.description,
+            originalDescription: tx.originalDescription,
             date: tx.date.toISOString(),
             amount: tx.amount,
             type: tx.direction,

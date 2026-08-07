@@ -64,19 +64,20 @@ export async function syncItemData(itemId: string) {
         const txDate = tx.date ? new Date(tx.date) : new Date();
         const txAmount = tx.amount;
         
-        // Verifica se já existe uma transação manual (importada via CSV) com o mesmo valor (tolerância de R$ 0.02)
+        // Verifica se já existe uma transação manual (importada via CSV) com o mesmo valor
         // e data próxima (tolerância de 3 dias) que ainda não foi vinculada à Pluggy.
         // Se encontrar, atualiza a transação manual com o ID da Pluggy em vez de criar duplicata.
         const existingManualMatch = await prisma.transaction.findFirst({
           where: {
             accountId: account.id,
-            isManual: true,
-            externalId: { startsWith: 'csv_' },
-            amount: { gte: txAmount - 0.02, lte: txAmount + 0.02 },
+            amount: tx.amount,
+            // Verifica transações de -3 a +3 dias
             date: {
               gte: new Date(txDate.getTime() - 3 * 24 * 60 * 60 * 1000),
-              lte: new Date(txDate.getTime() + 3 * 24 * 60 * 60 * 1000)
-            }
+              lte: new Date(txDate.getTime() + 3 * 24 * 60 * 60 * 1000),
+            },
+            origin: 'MANUAL',
+            externalId: null
           }
         });
 
@@ -87,7 +88,6 @@ export async function syncItemData(itemId: string) {
             where: { id: existingManualMatch.id },
             data: {
               externalId: tx.id,
-              // Mantém isManual como true para o usuário saber que foi recuperada do CSV originalmente
             }
           });
         }
@@ -96,23 +96,19 @@ export async function syncItemData(itemId: string) {
           where: { externalId: tx.id },
           update: {
             date: txDate,
-            description: tx.description || tx.descriptionRaw || 'Transação',
+            originalDescription: tx.description || tx.descriptionRaw || 'Transação',
             amount: tx.amount,
-            direction: tx.amount < 0 ? 'DEBIT' : 'CREDIT',
-            category: tx.category,
+            type: tx.categoryId || (tx.amount < 0 ? 'DEBIT' : 'CREDIT'),
             status: tx.status,
-            pluggyUpdatedAt: new Date(),
           },
           create: {
             externalId: tx.id,
             accountId: account.id,
             date: txDate,
-            description: tx.description || tx.descriptionRaw || 'Transação',
+            originalDescription: tx.description || tx.descriptionRaw || 'Transação',
             amount: tx.amount,
-            direction: tx.amount < 0 ? 'DEBIT' : 'CREDIT',
-            category: tx.category,
+            type: tx.categoryId || (tx.amount < 0 ? 'DEBIT' : 'CREDIT'),
             status: tx.status,
-            pluggyUpdatedAt: new Date(),
           }
         });
       }

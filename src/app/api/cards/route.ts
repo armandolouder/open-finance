@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
       for (const tx of monthTxns) {
         // Create a unique key: date(YYYY-MM-DD) + amount + description
         const dayKey = tx.date.toISOString().slice(0, 10);
-        const key = `${dayKey}_${tx.amount}_${tx.description.trim()}`;
+        const key = `${dayKey}_${tx.amount}_${tx.originalDescription.trim()}`;
         if (!seen.has(key)) {
           seen.add(key);
           uniqueTxns.push(tx);
@@ -126,8 +126,8 @@ export async function GET(request: NextRequest) {
           const pDate = typeof tx.purchaseDate === 'string' ? tx.purchaseDate : tx.purchaseDate.toISOString();
           key = `${pDate.slice(0, 10)}_${roundedAmount}_${tx.totalInstallments}`;
         } else {
-          const cleanDesc = tx.description.replace(/\s*(?:-\s*)?(?:PARC\.?\s*)?\(?\d{1,2}\/\d{1,2}\)?$/i, '').trim();
-          key = `${cleanDesc}_${roundedAmount}_${tx.totalInstallments}`;
+            const cleanDesc = tx.originalDescription.replace(/\s*(?:-\s*)?(?:PARC\.?\s*)?\(?\d{1,2}\/\d{1,2}\)?$/i, '').trim();
+            key = `${cleanDesc}_${roundedAmount}_${tx.totalInstallments}`;
         }
         if (!instGroups.has(key) || tx.installmentNumber > instGroups.get(key).installmentNumber) {
           instGroups.set(key, { ...tx, billMonthStr: getTxBillMonth(tx) });
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
           .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .map((tx: any) => ({
             id: tx.externalId,
-            description: tx.description,
+            description: tx.originalDescription,
             amount: tx.amount,
             date: tx.date.toISOString(),
             purchaseDate: tx.purchaseDate ? tx.purchaseDate.toISOString() : tx.date.toISOString(),

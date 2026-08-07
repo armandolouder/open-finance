@@ -113,35 +113,17 @@ export async function POST() {
               where: { externalId: tx.id },
               update: {
                 date: new Date(tx.date),
-                description: tx.description,
+                originalDescription: tx.description,
                 amount: tx.amount,
-                direction: tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT',
-                category: tx.category,
-                originalCategory: tx.originalCategory || tx.category,
-
-                billForecastDate: tx.creditCardMetadata?.billForecastDate ?? null,
-                purchaseDate: tx.creditCardMetadata?.purchaseDate ? new Date(tx.creditCardMetadata.purchaseDate) : null,
-                totalInstallments: tx.creditCardMetadata?.totalInstallments ?? null,
-                installmentNumber: tx.creditCardMetadata?.installmentNumber ?? null,
-                cardNumber: tx.creditCardMetadata?.cardNumber ?? null,
-                pluggyUpdatedAt: new Date(),
+                type: tx.categoryId || (tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT'),
               },
               create: {
                 externalId: tx.id,
                 accountId: dbAccount.id,
                 date: new Date(tx.date),
-                description: tx.description,
+                originalDescription: tx.description,
                 amount: tx.amount,
-                direction: tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT',
-                category: tx.category,
-                originalCategory: tx.originalCategory || tx.category,
-
-                billForecastDate: tx.creditCardMetadata?.billForecastDate ?? null,
-                purchaseDate: tx.creditCardMetadata?.purchaseDate ? new Date(tx.creditCardMetadata.purchaseDate) : null,
-                totalInstallments: tx.creditCardMetadata?.totalInstallments ?? null,
-                installmentNumber: tx.creditCardMetadata?.installmentNumber ?? null,
-                cardNumber: tx.creditCardMetadata?.cardNumber ?? null,
-                pluggyUpdatedAt: new Date(),
+                type: tx.categoryId || (tx.type === 'CREDIT' ? 'CREDIT' : 'DEBIT'),
               }
             });
           }
