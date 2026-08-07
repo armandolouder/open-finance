@@ -95,6 +95,14 @@ function TransactionsPageContent() {
     (t.accountName ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const groupedTransactions = filtered.reduce((acc, t) => {
+    // We assume t.date is a valid date string
+    const dateKey = new Date(t.date).toLocaleDateString("pt-BR", { day: "numeric", month: "long" });
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(t);
+    return acc;
+  }, {} as Record<string, Transaction[]>);
+
   return (
     <div className="space-y-5">
       {/* Cabeçalho */}
@@ -160,12 +168,12 @@ function TransactionsPageContent() {
         <div className="rounded-2xl bg-destructive/10 border border-destructive/30 p-6 text-destructive">{error}</div>
       )}
 
-      {/* Lista de transações */}
+      {/* Lista de transações agrupadas */}
       {!loading && !error && (
-        <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm">
-          {/* Cabeçalho da tabela */}
+        <div className="space-y-8 pb-10">
+          {/* Cabeçalho de Lançamentos */}
           {filtered.length > 0 && (
-            <div className="px-5 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+            <div className="flex items-center justify-between px-2">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 {filtered.length} lançamentos
               </span>
@@ -174,75 +182,80 @@ function TransactionsPageContent() {
           )}
 
           {filtered.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
+            <div className="rounded-2xl bg-card border border-border p-12 text-center text-muted-foreground shadow-sm">
               {search ? "Nenhuma transação encontrada para sua busca." : "Nenhuma transação neste mês."}
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {filtered.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      t.type === "CREDIT" ? "bg-emerald-500/10" : "bg-destructive/10"
-                    }`}>
-                      {t.type === "CREDIT"
-                        ? <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
-                        : <ArrowUpRight className="w-4 h-4 text-destructive" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground text-sm truncate leading-snug">{t.description}</p>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-muted-foreground">{t.accountName}</span>
-                          <select
-                            value={t.categoryId || ""}
-                            onChange={async (e) => {
-                              const newCatId = e.target.value;
-                              if (!newCatId) return;
-                              try {
-                                await fetch("/api/transactions/override", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ externalId: t.id, categoryId: newCatId })
-                                });
-                                
-                                // Flatten categories to find the selected one
-                                const flatCats = categories.reduce((acc, c) => [...acc, c, ...(c.children || [])], []);
-                                const selCat = flatCats.find((c: any) => c.id === newCatId);
-                                
-                                setTransactions(transactions.map(tx => 
-                                  tx.id === t.id ? { ...tx, categoryId: newCatId, category: selCat?.name, categoryColor: selCat?.color } : tx
-                                ));
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            }}
-                            className={cn(
-                              "text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md font-medium cursor-pointer border-none focus:ring-0",
-                              t.categoryColor ? "text-white" : "text-muted-foreground bg-white/10"
-                            )}
-                            style={t.categoryColor ? { backgroundColor: t.categoryColor } : {}}
-                          >
-                            <option value="" disabled>{t.category || "Sem categoria"}</option>
-                            {categories.map(c => (
-                              <optgroup key={c.id} label={c.name}>
-                                <option value={c.id}>{c.name} (Geral)</option>
-                                {c.children?.map((child: any) => (
-                                  <option key={child.id} value={child.id}>{child.name}</option>
-                                ))}
-                              </optgroup>
-                            ))}
-                          </select>
+            <div className="space-y-6">
+              {Object.entries(groupedTransactions).map(([dateKey, items]) => (
+                <div key={dateKey} className="space-y-3">
+                  <h3 className="text-sm font-bold text-foreground pl-2 tracking-tight">{dateKey}</h3>
+                  <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm divide-y divide-border">
+                    {items.map((t) => (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            t.type === "CREDIT" ? "bg-emerald-500/10" : "bg-destructive/10"
+                          }`}>
+                            {t.type === "CREDIT"
+                              ? <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
+                              : <ArrowUpRight className="w-4 h-4 text-destructive" />}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate leading-snug">{t.description}</p>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <span className="text-xs text-muted-foreground">{t.accountName}</span>
+                                <select
+                                  value={t.categoryId || ""}
+                                  onChange={async (e) => {
+                                    const newCatId = e.target.value;
+                                    if (!newCatId) return;
+                                    try {
+                                      await fetch("/api/transactions/override", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ externalId: t.id, categoryId: newCatId })
+                                      });
+                                      
+                                      const flatCats = categories.reduce((acc, c) => [...acc, c, ...(c.children || [])], []);
+                                      const selCat = flatCats.find((c: any) => c.id === newCatId);
+                                      
+                                      setTransactions(transactions.map(tx => 
+                                        tx.id === t.id ? { ...tx, categoryId: newCatId, category: selCat?.name, categoryColor: selCat?.color } : tx
+                                      ));
+                                    } catch (err) {
+                                      console.error(err);
+                                    }
+                                  }}
+                                  className={cn(
+                                    "text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md font-medium cursor-pointer border-none focus:ring-0",
+                                    t.categoryColor ? "text-white" : "text-muted-foreground bg-white/10"
+                                  )}
+                                  style={t.categoryColor ? { backgroundColor: t.categoryColor } : {}}
+                                >
+                                  <option value="" disabled>{t.category || "Sem categoria"}</option>
+                                  {categories.map(c => (
+                                    <optgroup key={c.id} label={c.name}>
+                                      <option value={c.id}>{c.name} (Geral)</option>
+                                      {c.children?.map((child: any) => (
+                                        <option key={child.id} value={child.id}>{child.name}</option>
+                                      ))}
+                                    </optgroup>
+                                  ))}
+                                </select>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`font-semibold text-sm ${t.type === "CREDIT" ? "text-emerald-500" : "text-foreground"}`}>
+                            {t.type === "CREDIT" ? "+" : "-"}{fmt(Math.abs(t.amount))}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`font-semibold text-sm ${t.type === "CREDIT" ? "text-emerald-500" : "text-foreground"}`}>
-                      {t.type === "CREDIT" ? "+" : "-"}{fmt(Math.abs(t.amount))}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{fmtDateTime(t.date)}</p>
+                    ))}
                   </div>
                 </div>
               ))}
