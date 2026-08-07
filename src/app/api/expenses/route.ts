@@ -30,7 +30,7 @@ export async function GET(req: Request) {
         },
         direction: 'DEBIT',
         category: {
-          notIn: ['Transfer', 'Same person transfer', 'Credit Card Payment']
+          notIn: ['Transfer', 'Same person transfer', 'Credit Card Payment', 'Aplicação', 'Estorno de compra']
         },
         OR: [
           { classification: { not: 'IGNORED' } },

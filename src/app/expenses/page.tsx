@@ -8,6 +8,7 @@ import {
 import useSWR from "swr";
 import { cn, monthKey, monthLabel } from "@/lib/utils";
 import { ExpenseModal } from "@/components/expenses/ExpenseModal";
+import { EditTransactionModal } from "@/components/transactions/EditTransactionModal";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -37,6 +38,7 @@ function ExpensesPageContent() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
+  const [editTransactionItem, setEditTransactionItem] = useState<any | null>(null);
 
   const handleDeleteExpense = async (id: string) => {
     if (!confirm("Tem certeza que deseja apagar esta despesa recorrente?")) return;
@@ -138,9 +140,18 @@ function ExpensesPageContent() {
           ) : allItems.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">Nenhuma despesa este mês.</div>
           ) : (
-            allItems.map((t, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 hover:bg-accent/50 transition-colors">
-                <div className="w-12 h-12 rounded-xl bg-muted/30 flex flex-col items-center justify-center shrink-0">
+            allItems.map((t, i) => {
+              const isActualTransaction = !t.isProjected;
+              return (
+                <div 
+                  key={i} 
+                  onClick={() => isActualTransaction ? setEditTransactionItem(t) : null}
+                  className={cn(
+                    "flex items-center gap-4 p-4 transition-colors",
+                    isActualTransaction ? "cursor-pointer hover:bg-accent/50" : "hover:bg-accent/30"
+                  )}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-muted/30 flex flex-col items-center justify-center shrink-0">
                   <span className="text-[10px] text-muted-foreground uppercase leading-none mb-1">Dia</span>
                   <span className="font-bold text-foreground leading-none">
                     {new Date(t.date || (t as any).projectedDate).getDate()}
@@ -182,7 +193,8 @@ function ExpensesPageContent() {
                   )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -192,6 +204,13 @@ function ExpensesPageContent() {
         onClose={() => { setIsModalOpen(false); setEditExpenseId(null); }} 
         onSaved={() => { setIsModalOpen(false); setEditExpenseId(null); mutateExpenses(); }} 
         expenseId={editExpenseId}
+      />
+
+      <EditTransactionModal 
+        isOpen={!!editTransactionItem} 
+        onClose={() => setEditTransactionItem(null)} 
+        onSaved={() => { setEditTransactionItem(null); mutateExpenses(); }} 
+        transaction={editTransactionItem} 
       />
     </div>
   );
