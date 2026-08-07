@@ -61,8 +61,8 @@ export async function GET(req: Request) {
       
       if (!hasRealMatch && re.matchPattern) {
         hasRealMatch = transactions.some((t: any) => {
-          const desc = t.description.toLowerCase();
-          const patterns = re.matchPattern!.toLowerCase().split(',').map((p: string) => p.trim());
+          const desc = t.description.toLowerCase().replace(/\s+/g, ' ');
+          const patterns = re.matchPattern!.toLowerCase().split(',').map((p: string) => p.trim().replace(/\s+/g, ' '));
           return patterns.some((p: string) => p && desc.includes(p));
         });
       }
