@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
@@ -24,14 +23,11 @@ function createPrismaClient(): PrismaClient {
     return new PrismaClient({ adapter });
   }
 
-  // Fallback para SQLite local
+  // Fallback para SQLite local (só roda na máquina do dev, nunca na Vercel)
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
   const adapter = new PrismaBetterSqlite3({ url: 'dev.db' });
   return new PrismaClient({ adapter });
-}
-
-// Força a recriação do client (útil após alterações de schema no dev)
-if (process.env.NODE_ENV !== 'production') {
-  delete globalForPrisma.prisma;
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();

@@ -22,10 +22,21 @@ export default function RecurringExpensesPage() {
   const [tab, setTab] = useState<"recurring" | "installments">("recurring");
 
   useEffect(() => {
-    fetch("/api/expenses/recurring")
+    fetch("/api/expenses")
       .then(r => r.json())
       .then(d => {
-        if (!d.error) setData(d);
+        // Filter only expenses that belong to a series
+        const seriesExpenses = (d.expenses || []).filter((e: any) => e.seriesId);
+        setData(seriesExpenses.map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          amount: e.amount,
+          frequency: e.series?.type === 'INSTALLMENT' ? 'INSTALLMENT' : (e.series?.frequency || 'MONTHLY'),
+          startDate: e.dueDate,
+          categoryId: e.categoryId,
+          category: e.categoryRelation ? { name: e.categoryRelation.name } : undefined,
+          account: e.account ? { name: e.account.name, institutionName: '' } : undefined,
+        })));
       })
       .finally(() => setLoading(false));
   }, []);

@@ -228,7 +228,7 @@ export async function GET(request: Request) {
             continue;
           }
 
-          if (tx.direction === 'CREDIT') {
+          if (tx.amount > 0) {
             totalIncome += tx.amount;
             if (type === 'PF' && (desc.includes('pro-labore') || desc.includes('pro labore'))) {
               proLabore += tx.amount;
@@ -265,7 +265,7 @@ export async function GET(request: Request) {
             originalDescription: tx.originalDescription,
             date: tx.date.toISOString(),
             amount: tx.amount,
-            type: tx.direction,
+            type: tx.amount > 0 ? 'CREDIT' : 'DEBIT',
             institution: institutionName,
             accountName: customName,
             category: tx.category || 'Outros'

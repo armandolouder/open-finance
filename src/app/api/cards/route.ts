@@ -183,8 +183,8 @@ export async function GET(request: NextRequest) {
             cardNumber: tx.cardNumber,
             totalInstallments: tx.totalInstallments,
             installmentNumber: tx.installmentNumber,
-            type: tx.direction,
-            isManual: tx.isManual,
+            type: tx.amount > 0 ? 'CREDIT' : 'DEBIT',
+            isManual: tx.origin === 'CSV' || tx.origin === 'MANUAL',
           })),
       }];
 
