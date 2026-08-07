@@ -12,6 +12,21 @@ const fmt = (v: number | undefined | null) =>
 const fmtDateTime = (d: string) =>
   new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
+const fmtDateFull = (d: string) =>
+  new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+const getBankInfo = (accountName: string = "") => {
+  const name = accountName.toUpperCase();
+  if (name.includes("NUBANK") || name.includes("NU FINANCEIRA")) return { initial: "N", bg: "bg-[#8A05BE]" };
+  if (name.includes("INTER")) return { initial: "I", bg: "bg-[#FF7A00]" };
+  if (name.includes("MERCADO PAGO")) return { initial: "M", bg: "bg-[#009EE3]" };
+  if (name.includes("ITAU") || name.includes("ITAÚ")) return { initial: "I", bg: "bg-[#EC7000]" };
+  if (name.includes("BRADESCO")) return { initial: "B", bg: "bg-[#CC092F]" };
+  if (name.includes("SANTANDER")) return { initial: "S", bg: "bg-[#CC0000]" };
+  if (name.includes("CAIXA")) return { initial: "C", bg: "bg-[#005CA9]" };
+  return { initial: name.charAt(0) || "B", bg: "bg-gray-700" };
+};
+
 interface Transaction {
   id: string;
   description: string;
@@ -190,72 +205,47 @@ function TransactionsPageContent() {
               {Object.entries(groupedTransactions).map(([dateKey, items]) => (
                 <div key={dateKey} className="space-y-3">
                   <h3 className="text-sm font-bold text-foreground pl-2 tracking-tight">{dateKey}</h3>
-                  <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm divide-y divide-border">
-                    {items.map((t) => (
-                      <div
-                        key={t.id}
-                        className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                            t.type === "CREDIT" ? "bg-emerald-500/10" : "bg-destructive/10"
-                          }`}>
-                            {t.type === "CREDIT"
-                              ? <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
-                              : <ArrowUpRight className="w-4 h-4 text-destructive" />}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground text-sm truncate leading-snug">{t.description}</p>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              <span className="text-xs text-muted-foreground">{t.accountName}</span>
-                                <select
-                                  value={t.categoryId || ""}
-                                  onChange={async (e) => {
-                                    const newCatId = e.target.value;
-                                    if (!newCatId) return;
-                                    try {
-                                      await fetch("/api/transactions/override", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ externalId: t.id, categoryId: newCatId })
-                                      });
-                                      
-                                      const flatCats = categories.reduce((acc, c) => [...acc, c, ...(c.children || [])], []);
-                                      const selCat = flatCats.find((c: any) => c.id === newCatId);
-                                      
-                                      setTransactions(transactions.map(tx => 
-                                        tx.id === t.id ? { ...tx, categoryId: newCatId, category: selCat?.name, categoryColor: selCat?.color } : tx
-                                      ));
-                                    } catch (err) {
-                                      console.error(err);
-                                    }
-                                  }}
-                                  className={cn(
-                                    "text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md font-medium cursor-pointer border-none focus:ring-0",
-                                    t.categoryColor ? "text-white" : "text-muted-foreground bg-white/10"
-                                  )}
-                                  style={t.categoryColor ? { backgroundColor: t.categoryColor } : {}}
-                                >
-                                  <option value="" disabled>{t.category || "Sem categoria"}</option>
-                                  {categories.map(c => (
-                                    <optgroup key={c.id} label={c.name}>
-                                      <option value={c.id}>{c.name} (Geral)</option>
-                                      {c.children?.map((child: any) => (
-                                        <option key={child.id} value={child.id}>{child.name}</option>
-                                      ))}
-                                    </optgroup>
-                                  ))}
-                                </select>
+                  <div className="bg-[#0a0a0a] rounded-2xl p-2 border border-white/5">
+                    {items.map((t) => {
+                      const bankInfo = getBankInfo(t.accountName);
+                      return (
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between gap-4 py-4 px-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                        >
+                          <div className="flex items-center gap-4 min-w-0">
+                            {/* Avatar */}
+                            <div className="relative shrink-0">
+                              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-xl", bankInfo.bg)}>
+                                {bankInfo.initial}
+                              </div>
+                              <div className={cn("absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-[3px] border-[#0a0a0a]", t.type === "CREDIT" ? "bg-emerald-500" : "bg-red-500")}>
+                                {t.type === "CREDIT"
+                                  ? <ArrowUpRight className="w-3 h-3 text-black stroke-[3]" />
+                                  : <ArrowDownLeft className="w-3 h-3 text-white stroke-[3]" />}
+                              </div>
+                            </div>
+
+                            {/* Description and Subtitle */}
+                            <div className="min-w-0 flex flex-col justify-center">
+                              <p className="font-mono text-[13px] font-bold text-emerald-500 truncate uppercase tracking-widest">
+                                {t.description}
+                              </p>
+                              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mt-1 truncate">
+                                {t.accountName || "DESCONHECIDO"} | {t.category || t.categoryId || "TRANSFERS"} | {fmtDateFull(t.date)}
+                              </p>
                             </div>
                           </div>
+                          
+                          {/* Value */}
+                          <div className="text-right shrink-0">
+                            <p className={cn("font-mono font-bold text-sm tracking-widest", t.type === "CREDIT" ? "text-emerald-500" : "text-red-500")}>
+                              {t.type === "CREDIT" ? "+ " : "- "}{fmt(Math.abs(t.amount))}
+                            </p>
+                          </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className={`font-semibold text-sm ${t.type === "CREDIT" ? "text-emerald-500" : "text-foreground"}`}>
-                            {t.type === "CREDIT" ? "+" : "-"}{fmt(Math.abs(t.amount))}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
