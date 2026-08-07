@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import {
   ArrowDownLeft, ArrowUpRight, Search,
-  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet,
+  TrendingUp, TrendingDown, Wallet,
 } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const fmt = (v: number | undefined | null) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-const fmtDateTime = (d: string) =>
-  new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
 const fmtDateFull = (d: string) =>
   new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -40,69 +40,18 @@ interface Transaction {
   accountName?: string;
 }
 
-interface Summary {
-  totalIn: number;
-  totalOut: number;
-  balance: number;
-  count: number;
-}
-
 import { useSearchParams } from "next/navigation";
-import { cn, getBankLogo, monthKey, monthLabel } from "@/lib/utils";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  "Same person transfer": "bg-blue-500/10 text-blue-400",
-  "Transfer": "bg-blue-500/10 text-blue-400",
-  "Credit Card Payment": "bg-purple-500/10 text-purple-400",
-  "Income": "bg-emerald-500/10 text-emerald-400",
-  "Salary": "bg-emerald-500/10 text-emerald-400",
-};
+import { cn, monthKey } from "@/lib/utils";
 
 function TransactionsPageContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get("month") || monthKey(new Date());
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [summary, setSummary] = useState<Summary>({ totalIn: 0, totalOut: 0, balance: 0, count: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState<any[]>([]);
-
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch("/api/categories");
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setCategories(data);
-      } else {
-        console.error("API Error Categories:", data);
-        setCategories([]);
-      }
-    } catch (e) {
-      console.error(e);
-      setCategories([]);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchData = useCallback((m: string) => {
-    setLoading(true);
-    setError(null);
-    fetch(`/api/transactions?month=${m}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) throw new Error(d.error);
-        setTransactions(d.transactions);
-        setSummary(d.summary);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { fetchData(month); }, [month, fetchData]);
+  
+  const { data, error, isLoading: loading } = useSWR(`/api/transactions?month=${month}`, fetcher);
+  
+  const transactions: Transaction[] = data?.transactions || [];
+  const summary = data?.summary || { totalIn: 0, totalOut: 0, balance: 0, count: 0 };
 
   const filtered = transactions.filter((t) =>
     (t.description ?? "").toLowerCase().includes(search.toLowerCase()) ||

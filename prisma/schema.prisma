@@ -59,6 +59,8 @@ model Account {
   transactions Transaction[]
   creditCards  CreditCard[]
   recurringExpenses RecurringExpense[]
+
+  @@index([connectionId])
 }
 
 model Transaction {
@@ -95,6 +97,9 @@ model Transaction {
   account          Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   entity           Entity? @relation(fields: [entityId], references: [id])
   recurringExpense RecurringExpense? @relation(fields: [recurringExpenseId], references: [id])
+
+  @@index([accountId])
+  @@index([date])
 }
 
 model CreditCard {
@@ -137,6 +142,8 @@ model CreditCardBill {
 
   creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
   entity     Entity?    @relation(fields: [entityId], references: [id])
+
+  @@index([creditCardId])
 }
 
 model Investment {

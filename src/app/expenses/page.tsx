@@ -5,8 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {
   ChevronLeft, ChevronRight, Calendar, Check, Clock, TrendingUp, Plus, TrendingDown, Edit2, Trash2
 } from "lucide-react";
+import useSWR from "swr";
 import { cn, monthKey, monthLabel } from "@/lib/utils";
 import { ExpenseModal } from "@/components/expenses/ExpenseModal";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface Transaction {
   id: string;
@@ -25,12 +28,13 @@ function ExpensesPageContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get("month") || monthKey(new Date());
   
-  const [data, setData] = useState<{
-    transactions: Transaction[];
-    projections: Transaction[];
-  }>({ transactions: [], projections: [] });
-  const [realCardTotal, setRealCardTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { data: expensesData, mutate: mutateExpenses, isLoading: loadingExpenses } = useSWR(`/api/expenses?month=${month}`, fetcher);
+  const { data: cardsData, mutate: mutateCards, isLoading: loadingCards } = useSWR(`/api/cards?month=${month}`, fetcher);
+
+  const loading = loadingExpenses || loadingCards;
+  const data = expensesData && !expensesData.error ? expensesData : { transactions: [], projections: [] };
+  const realCardTotal = cardsData?.cards?.reduce((sum: number, card: any) => sum + (card.bills?.[0]?.total || 0), 0) || 0;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
 
@@ -38,32 +42,11 @@ function ExpensesPageContent() {
     if (!confirm("Tem certeza que deseja apagar esta despesa recorrente?")) return;
     try {
       await fetch(`/api/expenses/recurring/${id}`, { method: "DELETE" });
-      fetchData(month);
+      mutateExpenses();
     } catch (e) {
       console.error(e);
     }
   };
-
-  const fetchData = useCallback((m: string) => {
-    setLoading(true);
-    
-    Promise.all([
-      fetch(`/api/expenses?month=${m}`).then(r => r.json()),
-      fetch(`/api/cards?month=${m}`).then(r => r.json())
-    ]).then(([expensesData, cardsData]) => {
-      if (!expensesData.error) {
-        setData(expensesData);
-      }
-      if (cardsData.cards) {
-        const totalFaturas = cardsData.cards.reduce((sum: number, card: any) => {
-          return sum + (card.bills?.[0]?.total || 0);
-        }, 0);
-        setRealCardTotal(totalFaturas);
-      }
-    }).finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { fetchData(month); }, [month, fetchData]);
 
   // Combine and sort
   const allItems = [...data.transactions, ...(data.projections || [])]
@@ -203,7 +186,7 @@ function ExpensesPageContent() {
       <ExpenseModal 
         isOpen={isModalOpen} 
         onClose={() => { setIsModalOpen(false); setEditExpenseId(null); }} 
-        onSaved={() => { setIsModalOpen(false); setEditExpenseId(null); fetchData(month); }} 
+        onSaved={() => { setIsModalOpen(false); setEditExpenseId(null); mutateExpenses(); }} 
         expenseId={editExpenseId}
       />
     </div>

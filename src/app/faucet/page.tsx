@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Droplet, AlertTriangle, Coffee, Repeat, TrendingDown } from "lucide-react";
+import useSWR from "swr";
 import { cn } from "@/lib/utils";
 
 const fmt = (v: number | undefined | null) =>
@@ -22,21 +22,10 @@ const getBankInfo = (accountName: string = "") => {
   return { initial: name.charAt(0) || "B", bg: "bg-gray-700" };
 };
 
-export default function FaucetPage() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-  useEffect(() => {
-    fetch("/api/faucet")
-      .then(res => res.json())
-      .then(d => {
-        if (d.error) throw new Error(d.error);
-        setData(d);
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+export default function FaucetPage() {
+  const { data, error, isLoading: loading } = useSWR("/api/faucet", fetcher);
 
   if (loading) {
     return (
