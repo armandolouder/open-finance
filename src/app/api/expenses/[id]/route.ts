@@ -38,17 +38,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const updateData = {
       title, description, amount, 
-      dueDate: dueDate ? new Date(dueDate) : undefined,
       competenceDate: competenceDate ? new Date(competenceDate) : null,
       categoryId, subcategoryId, tags, supplier, costCenter, project,
       paymentMethod, accountId, creditCardId, notes
     };
 
     if (!expense.seriesId || updateMode === 'SINGLE' || !updateMode) {
-      // Atualiza apenas esta despesa
+      // Atualiza apenas esta despesa (incluindo a data)
       const updated = await prisma.expense.update({
         where: { id },
-        data: updateData
+        data: {
+          ...updateData,
+          dueDate: dueDate ? new Date(dueDate) : undefined,
+        }
       });
       return NextResponse.json(updated);
     }

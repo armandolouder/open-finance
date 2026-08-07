@@ -89,6 +89,7 @@ export async function GET() {
         currencyCode: account.currency ?? 'BRL',
         totalInstallments,
         creditData: creditData ? {
+          id: creditData.id,
           creditLimit: creditData.creditLimit ?? 0,
           balance: account.balance ?? 0,
           availableCreditLimit: creditData.availableLimit ?? 0,

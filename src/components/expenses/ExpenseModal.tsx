@@ -138,7 +138,8 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
         onSaved();
         onClose();
       } else {
-        alert("Erro ao salvar despesa");
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Erro ao salvar despesa: ${errorData.error || "Desconhecido"}`);
       }
     } catch (err) {
       console.error(err);
@@ -227,10 +228,10 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
                     >
                       <option value="">Não especificado</option>
                       <optgroup label="Contas Bancárias">
-                        {accounts.map(a => <option key={a.id} value={`account_${a.id}`}>{a.name}</option>)}
+                        {accounts.map(a => <option key={a.id} value={`account_${a.dbId}`}>{a.name}</option>)}
                       </optgroup>
                       <optgroup label="Cartões de Crédito">
-                        {cards.map(c => <option key={c.id} value={`card_${c.id}`}>{c.name}</option>)}
+                        {cards.map(c => <option key={c.id} value={`card_${c.creditData?.id}`}>{c.name}</option>)}
                       </optgroup>
                     </select>
                   </div>
