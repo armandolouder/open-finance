@@ -32,9 +32,10 @@ export async function GET(req: Request) {
         category: {
           notIn: ['Transfer', 'Same person transfer', 'Credit Card Payment']
         },
-        classification: {
-          not: 'IGNORED'
-        }
+        OR: [
+          { classification: { not: 'IGNORED' } },
+          { classification: null }
+        ]
       },
       include: { account: true }
     });
