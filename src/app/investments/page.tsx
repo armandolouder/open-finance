@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown, Building2 } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, TrendingDown, Building2, Sparkles, ChevronRight } from "lucide-react";
 import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
 
 const fmt = (v: number | undefined | null) =>
@@ -98,6 +99,27 @@ export default function InvestmentsPage() {
         <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Investimentos</h1>
         <p className="text-muted-foreground">Carteira de investimentos consolidada por banco.</p>
       </div>
+
+      {/* INSIGHTS BANNER */}
+      <Link href="/investments/insights" className="block group">
+        <div className="relative rounded-2xl overflow-hidden bg-[#0a0a0a] border border-emerald-500/20 p-5 shadow-[0_0_20px_-10px_rgba(16,185,129,0.2)] transition-all hover:shadow-[0_0_30px_-10px_rgba(16,185,129,0.3)] hover:border-emerald-500/40">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-cyan-400 to-emerald-500 bg-[length:200%_auto] animate-gradient-x"></div>
+          <div className="flex justify-between items-center relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                <Sparkles className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">Descubra seu Score de Investidor</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Veja análises automáticas da sua carteira e receba missões de diversificação.</p>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-400 transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      </Link>
 
       {/* Card de total */}
       {!loading && !error && investments.length > 0 && (

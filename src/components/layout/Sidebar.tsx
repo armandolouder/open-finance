@@ -25,6 +25,7 @@ const navGroups = [
       { name: "Faturas", href: "/bills", icon: Receipt },
       { name: "Despesas", href: "/expenses", icon: Receipt },
       { name: "Investimentos", href: "/investments", icon: TrendingUp },
+      { name: "Insights", href: "/investments/insights", icon: Sparkles },
       { name: "Sincronização", href: "/sync", icon: RefreshCw },
     ]
   }
