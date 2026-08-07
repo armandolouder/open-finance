@@ -6,6 +6,7 @@ import {
   ArrowDownLeft, ArrowUpRight, Search, CheckCircle2, CircleDashed, Tag
 } from "lucide-react";
 import { EditTransactionModal } from "@/components/transactions/EditTransactionModal";
+import { ReconciliationModal } from "@/components/transactions/ReconciliationModal";
 import { useSearchParams } from "next/navigation";
 import { cn, monthKey } from "@/lib/utils";
 
@@ -43,6 +44,8 @@ function TransactionsPageContent() {
   const month = searchParams.get("month") || monthKey(new Date());
   const [search, setSearch] = useState("");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [reconcilingTransaction, setReconcilingTransaction] = useState<Transaction | null>(null);
+  const [undoingId, setUndoingId] = useState<string | null>(null);
   
   const { data, error, isLoading: loading, mutate } = useSWR(`/api/transactions?month=${month}`, fetcher);
   
@@ -60,6 +63,33 @@ function TransactionsPageContent() {
     acc[dateKey].push(t);
     return acc;
   }, {} as Record<string, Transaction[]>);
+
+  const handleUndoReconciliation = async (tx: Transaction, e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent opening edit modal
+    
+    if (!confirm("Desfazer a conciliação desta transação?")) return;
+    
+    setUndoingId(tx.id);
+    try {
+      // Find the reconciliation ID... wait, we only have tx.id in the frontend list right now,
+      // and we just added DELETE /api/reconciliations/[id].
+      // BUT actually, a transaction can have multiple reconciliations, or one. 
+      // It's easier if we create a special endpoint to delete ALL reconciliations for a transaction:
+      // DELETE /api/transactions/[id]/reconciliations
+      // For now, let's just make a POST to a new specialized undo endpoint, or modify the delete.
+      // Wait, let's call DELETE /api/transactions/${tx.id}/reconciliations
+      const res = await fetch(`/api/transactions/${tx.id}/reconciliations`, { method: "DELETE" });
+      if (res.ok) {
+        mutate();
+      } else {
+        alert("Erro ao desfazer conciliação");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUndoingId(null);
+    }
+  };
 
   // Calcula resumo básico
   const totalIn = filtered.filter(t => ['PIX_IN', 'DEPOSIT', 'TRANSFER', 'CASHBACK', 'REFUND'].includes(t.type) || t.amount > 0).reduce((acc, t) => acc + Math.abs(t.amount), 0);
@@ -152,13 +182,25 @@ function TransactionsPageContent() {
                       <div className="flex items-center justify-between sm:justify-end gap-6 mt-3 sm:mt-0 w-full sm:w-auto">
                         <div className="flex items-center gap-2">
                           {isReconciled ? (
-                            <span className="flex items-center gap-1 text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Conciliado
-                            </span>
+                            <button 
+                              onClick={(e) => handleUndoReconciliation(tx, e)}
+                              disabled={undoingId === tx.id}
+                              className="flex items-center gap-1 text-xs font-medium text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                              title="Clique para desfazer conciliação"
+                            >
+                              {undoingId === tx.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} 
+                              Conciliado
+                            </button>
                           ) : (
-                            <span className="flex items-center gap-1 text-xs font-medium text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation(); // prevent edit modal
+                                setReconcilingTransaction(tx);
+                              }}
+                              className="flex items-center gap-1 text-xs font-medium text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-lg transition-colors cursor-pointer"
+                            >
                               <CircleDashed className="w-3.5 h-3.5" /> Solto
-                            </span>
+                            </button>
                           )}
                         </div>
                         <div className="text-right">
@@ -182,6 +224,14 @@ function TransactionsPageContent() {
         onClose={() => setEditingTransaction(null)}
         onSaved={mutate}
         transaction={editingTransaction}
+      />
+
+      {/* Reconciliation Modal */}
+      <ReconciliationModal
+        isOpen={!!reconcilingTransaction}
+        onClose={() => setReconcilingTransaction(null)}
+        onSaved={mutate}
+        transaction={reconcilingTransaction}
       />
     </div>
   );
