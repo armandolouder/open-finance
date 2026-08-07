@@ -16,6 +16,7 @@ interface Account {
   name: string;
   number: string;
   type: string;
+  connectionStatus?: string;
   balance: number;
   creditData?: { creditLimit: number; balance: number; availableCreditLimit: number } | null;
 }
@@ -402,6 +403,17 @@ export default function AccountsPage() {
                               : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
                           )}>
                             {label.entityType === "PF" ? <><User className="w-2.5 h-2.5 inline mr-0.5" />PF</> : <><Building2 className="w-2.5 h-2.5 inline mr-0.5" />PJ</>}
+                          </span>
+                        )}
+                        {account.connectionStatus && account.connectionStatus !== 'UPDATED' && (
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 border flex items-center gap-1",
+                            ['LOGIN_ERROR', 'OUTDATED'].includes(account.connectionStatus)
+                              ? "bg-destructive/15 text-destructive border-destructive/30"
+                              : "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                          )} title={`Status na Pluggy: ${account.connectionStatus}`}>
+                            <AlertCircle className="w-2.5 h-2.5" /> 
+                            {['LOGIN_ERROR', 'OUTDATED'].includes(account.connectionStatus) ? 'Desconectada' : 'Aguardando Ação'}
                           </span>
                         )}
                         <button

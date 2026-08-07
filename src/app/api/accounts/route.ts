@@ -73,6 +73,7 @@ export async function GET() {
         number: '', // not stored
         type: account.type,
         subtype: account.subtype,
+        connectionStatus: account.connection.status,
         balance: account.balance ?? 0,
         currencyCode: account.currency ?? 'BRL',
         totalInstallments,
