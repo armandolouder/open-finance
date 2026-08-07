@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/services/db";
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const expense = await prisma.expense.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        subcategory: true,
+        series: true
+      }
+    });
+
+    if (!expense) return NextResponse.json({ error: "Expense not found" }, { status: 404 });
+
+    return NextResponse.json(expense);
+  } catch (error) {
+    console.error("GET /api/expenses/[id] error:", error);
+    return NextResponse.json({ error: "Failed to fetch expense" }, { status: 500 });
+  }
+}
+
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;

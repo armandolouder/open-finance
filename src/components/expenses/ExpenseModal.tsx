@@ -52,9 +52,8 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
       if (expenseId) {
         setLoading(true);
         // Fetch specific expense
-        fetch("/api/expenses").then(res => res.json()).then(data => {
-          const exp = data.expenses?.find((e: any) => e.id === expenseId);
-          if (exp) {
+        fetch(`/api/expenses/${expenseId}`).then(res => res.json()).then(exp => {
+          if (exp && !exp.error) {
             let acId = "";
             if (exp.accountId) acId = `account_${exp.accountId}`;
             else if (exp.creditCardId) acId = `card_${exp.creditCardId}`;
@@ -64,8 +63,8 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
 
             setFormData({
               ...formData,
-              title: exp.title,
-              amount: exp.amount.toString(),
+              title: exp.title || "",
+              amount: exp.amount?.toString() || "",
               dueDate: exp.dueDate ? new Date(exp.dueDate).toISOString().split('T')[0] : "",
               categoryId: exp.categoryId || "",
               subcategoryId: exp.subcategoryId || "",
@@ -78,7 +77,7 @@ export function ExpenseModal({ isOpen, onClose, onSaved, expenseId }: ExpenseMod
               updateMode: "SINGLE"
             });
           }
-        }).finally(() => setLoading(false));
+        }).catch(console.error).finally(() => setLoading(false));
       } else {
         // Reset form for create
         setHasSeries(false);
