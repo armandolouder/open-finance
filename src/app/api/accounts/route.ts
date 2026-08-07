@@ -70,7 +70,7 @@ export async function GET() {
       }
 
       const creditData = account.creditCards ? account.creditCards[0] : null;
-      const label = accountLabels[account.id];
+      const label = accountLabels[account.externalId] || accountLabels[account.id]; // Check both just in case
       const customName = label?.customName;
 
       allAccounts.push({
