@@ -13,13 +13,13 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Finance Local",
+  title: "Despezzas",
   description: "Sistema financeiro pessoal e empresarial integrado à Pluggy",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Finance Local",
+    title: "Despezzas",
   },
 };
 

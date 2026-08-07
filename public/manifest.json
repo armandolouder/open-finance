@@ -1,6 +1,6 @@
 {
-  "name": "Open Finance",
-  "short_name": "Finance",
+  "name": "Despezzas",
+  "short_name": "Despezzas",
   "description": "App para gestão financeira avançada e consolidação bancária.",
   "start_url": "/",
   "display": "standalone",
