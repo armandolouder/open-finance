@@ -13,16 +13,16 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Transaction {
   id: string;
-  originalDescription: string;
-  normalizedDescription?: string;
+  description: string;
   amount: number;
   date: string;
   type: string;
-  origin: string;
+  transactionType?: string;
   isReconciled: boolean;
-  categoryRelation?: { id: string; name: string; color: string };
-  account?: { name: string };
-  creditCard?: { name: string };
+  categoryId?: string;
+  categoryName?: string;
+  subcategoryName?: string;
+  accountName?: string;
   tags?: string;
 }
 
@@ -49,9 +49,9 @@ function TransactionsPageContent() {
   const transactions: Transaction[] = data?.transactions || [];
 
   const filtered = transactions.filter((t) =>
-    (t.normalizedDescription ?? t.originalDescription).toLowerCase().includes(search.toLowerCase()) ||
-    (t.categoryRelation?.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
-    (t.account?.name ?? t.creditCard?.name ?? "").toLowerCase().includes(search.toLowerCase())
+    (t.description ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (t.categoryName ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (t.accountName ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   const groupedTransactions = filtered.reduce((acc, t) => {
@@ -116,7 +116,7 @@ function TransactionsPageContent() {
                 {items.map((tx) => {
                   const isCredit = ['PIX_IN', 'DEPOSIT', 'TRANSFER', 'CASHBACK', 'REFUND'].includes(tx.type) || tx.amount > 0;
                   const absAmount = Math.abs(tx.amount);
-                  const accName = tx.account?.name || tx.creditCard?.name || "Banco";
+                  const accName = tx.accountName || "Banco";
                   const bInfo = getBankInfo(accName);
                   const isReconciled = tx.isReconciled;
 
@@ -132,16 +132,16 @@ function TransactionsPageContent() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-foreground truncate">
-                            {tx.normalizedDescription || tx.originalDescription}
+                            {tx.description}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-muted-foreground">{accName}</span>
-                            {tx.categoryRelation && (
+                            {tx.categoryName && (
                               <>
                                 <span className="w-1 h-1 rounded-full bg-border" />
                                 <span className="flex items-center gap-1 text-[10px] uppercase font-medium tracking-wider text-muted-foreground">
                                   <Tag className="w-3 h-3" />
-                                  {tx.categoryRelation.name}
+                                  {tx.categoryName}
                                 </span>
                               </>
                             )}
