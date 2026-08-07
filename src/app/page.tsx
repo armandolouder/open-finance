@@ -5,6 +5,7 @@ import { ArrowRight, Building2, User, Wallet, ArrowDownCircle, ArrowUpCircle, Re
 import { cn, getBankBranding, getBankLogoUrl } from "@/lib/utils";
 import { CreditCardsSection } from "@/components/dashboard/CreditCardsSection";
 import { AccountSettingsModal } from "@/components/dashboard/AccountSettingsModal";
+import { InvestmentsDashboard } from "@/components/dashboard/InvestmentsDashboard";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -48,6 +49,9 @@ export default function Dashboard() {
         <div className="h-64 bg-card border border-border rounded-xl animate-pulse"></div>
       ) : (
         <>
+          {/* INVESTMENTS DASHBOARD */}
+          <InvestmentsDashboard accounts={data?.accounts || []} />
+
           {/* BANK ACCOUNTS */}
           <div>
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 mt-2">Contas Correntes</h3>
