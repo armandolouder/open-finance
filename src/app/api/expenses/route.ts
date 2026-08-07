@@ -56,8 +56,32 @@ export async function GET(req: NextRequest) {
 
     const purchaseGroups = new Map<string, typeof allInstallments[0]>();
     for (const tx of allInstallments) {
-      const cleanDesc = tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim().substring(0, 20).toLowerCase();
-      const signature = `${tx.creditCardId || tx.accountId}-${cleanDesc}-${tx.totalInstallments}-${Math.round(Math.abs(tx.amount))}`;
+      let closingDayNum = 25;
+      const customConfig = cardSettings[tx.account?.externalId || ''] || {};
+      if (customConfig.closingDay) {
+        closingDayNum = customConfig.closingDay;
+      } else if (tx.creditCard) {
+         closingDayNum = tx.creditCard.closingDay || (tx.creditCard.dueDay ? tx.creditCard.dueDay - 9 : 25);
+      } else if (tx.account && tx.account.creditCards && tx.account.creditCards.length > 0) {
+         const cc = tx.account.creditCards[0];
+         closingDayNum = cc.closingDay || (cc.dueDay ? cc.dueDay - 9 : 25);
+      }
+      if (closingDayNum <= 0) closingDayNum += 30; 
+
+      const txDate = new Date(tx.date);
+      let txYear = txDate.getFullYear();
+      let txMonth = txDate.getMonth() + 1;
+      if (txDate.getDate() > closingDayNum) {
+        txMonth += 1;
+        if (txMonth > 12) {
+          txMonth = 1;
+          txYear += 1;
+        }
+      }
+
+      const originMonth = (txYear * 12 + txMonth) - (tx.installmentNumber || 1);
+      const cleanDesc = tx.originalDescription.replace(/\s*\d+\/\d+\s*$/, '').trim().substring(0, 10).toLowerCase();
+      const signature = `${tx.creditCardId || tx.accountId}-${cleanDesc}-${tx.totalInstallments}-${Math.round(Math.abs(tx.amount))}-${originMonth}`;
       
       const existing = purchaseGroups.get(signature);
       if (!existing || (tx.installmentNumber || 0) > (existing.installmentNumber || 0)) {
