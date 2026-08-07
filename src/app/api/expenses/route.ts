@@ -32,12 +32,24 @@ export async function GET(req: NextRequest) {
       orderBy: { dueDate: 'asc' }
     });
 
+    const settings = await prisma.setting.findMany({
+      where: { key: { startsWith: 'card_settings_' } }
+    });
+    const cardSettings: Record<string, any> = {};
+    for (const s of settings) {
+      try { cardSettings[s.key.replace('card_settings_', '')] = JSON.parse(s.value); } catch {}
+    }
+
     const allInstallments = await prisma.transaction.findMany({
       where: {
         totalInstallments: { gt: 1 }
       },
       include: {
-        categoryRelation: true
+        categoryRelation: true,
+        account: {
+          include: { creditCards: true }
+        },
+        creditCard: true
       },
       orderBy: { date: 'asc' }
     });
@@ -55,9 +67,31 @@ export async function GET(req: NextRequest) {
 
     const pseudoExpenses = [];
     for (const tx of purchaseGroups.values()) {
+      let closingDayNum = 25;
+      const customConfig = cardSettings[tx.account?.externalId || ''] || {};
+      
+      if (customConfig.closingDay) {
+        closingDayNum = customConfig.closingDay;
+      } else if (tx.creditCard) {
+         closingDayNum = tx.creditCard.closingDay || (tx.creditCard.dueDay ? tx.creditCard.dueDay - 9 : 25);
+      } else if (tx.account && tx.account.creditCards && tx.account.creditCards.length > 0) {
+         const cc = tx.account.creditCards[0];
+         closingDayNum = cc.closingDay || (cc.dueDay ? cc.dueDay - 9 : 25);
+      }
+      if (closingDayNum <= 0) closingDayNum += 30; 
+
       const txDate = new Date(tx.date);
-      const txYear = txDate.getFullYear();
-      const txMonth = txDate.getMonth() + 1;
+      let txYear = txDate.getFullYear();
+      let txMonth = txDate.getMonth() + 1;
+      const txDay = txDate.getDate();
+
+      if (txDay > closingDayNum) {
+        txMonth += 1;
+        if (txMonth > 12) {
+          txMonth = 1;
+          txYear += 1;
+        }
+      }
       
       const monthDiff = (year - txYear) * 12 + (month - txMonth);
       const projectedInstallment = (tx.installmentNumber || 1) + monthDiff;
